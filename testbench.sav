@@ -1,0 +1,37 @@
+[timestart] 0
+[size] 1248 600
+[pos] -1 -1
+*-6.007232 37 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] testbench.
+[treeopen] testbench.cpu.
+@28
+testbench.clk
+@22
+testbench.cpu.pc[31:0]
+testbench.cpu.ir[31:0]
+@28
+testbench.cpu.ctl_ram_rd
+testbench.cpu.ctl_regs_we
+testbench.cpu.ctl_branch
+@800200
+-ALU
+@22
+testbench.cpu.alu.left[31:0]
+testbench.cpu.alu.right[31:0]
+testbench.cpu.alu.out[31:0]
+@1000200
+-ALU
+@800200
+-MEMORY
+@22
+testbench.cpu.d_addr[31:0]
+testbench.cpu.d_data_r[31:0]
+testbench.cpu.d_data_w[31:0]
+@28
+testbench.cpu.d_we
+@1000200
+-MEMORY
+@23
+testbench.cpu.REGS.wdata[31:0]
+[pattern_trace] 1
+[pattern_trace] 0
