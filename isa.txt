@@ -52,16 +52,15 @@ X7 TBS Rd, Ra, Rb        Rd = Ra & (1 << Rb) ? 1 : 0
 X8 SEQ Rd, Ra, Rb        Rd = Ra == Rb
 X9 SLT Rd, Ra, Rb        Rd = Ra < Rb
 XA SGT Rd, Ra, Rb        Rd = Ra > Rb
-XB REV Rd, Ra            Rd = reversebits(Ra)
+XB MOV Rd, Ra            Rd = Ra
 XC BIS Rd, Ra, Rb        Rd = Ra | (1 << Rb)
 XD BIC Rd, Ra, Rb        Rd = Ra & ~(1 << Rb)
-XE MOV Rd, Rb            Rd = Rb
+XE MLO Rd, Rb            Rd = signextend(Rb[15:0])
 XF MHI Rd, Ra, Rb        Rd = (Ra & 0xFFFF) | (Rb << 16)
 
 Open Issues
 -----------
-- should ALU IMM16 be signed?  If so, how do we load unsigned data?
-- consider dropping REV in favor of MOVU or MOVS?
+- should ALU IMM16 be signed?
 - figure out func field coding for variant LW/SW instructions
 - syntax for conditional branches is confusing
 - consider allowing B [Rx] as well as B Rx?

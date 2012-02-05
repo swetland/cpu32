@@ -89,6 +89,14 @@ void setlabel(const char *name, unsigned pc) {
 	labels = l;
 }
 
+const char *getlabel(unsigned pc) {
+	struct label *l;
+	for (l = labels; l; l = l->next)
+		if (l->pc == pc)
+			return l->name;
+	return 0;
+}
+
 void uselabel(const char *name, unsigned pc, unsigned type) {
 	struct label *l;
 	struct fixup *f;
@@ -134,13 +142,19 @@ void emit(unsigned instr) {
 }
 
 void save(const char *fn) {
+	const char *name;
 	unsigned n;
 	char dis[128];
 	FILE *fp = fopen(fn, "w");
 	if (!fp) die("cannot write to '%s'", fn);
 	for (n = 0; n < PC; n++) {
 		disassemble(dis, n * 4, rom[n]);
-		fprintf(fp, "%08x  // %08x: %s\n", rom[n], n*4, dis);
+		name = getlabel(n);
+		if (name) {
+			fprintf(fp, "%08x  // %04x: %-25s <- %s\n", rom[n], n*4, dis, name);
+		} else {
+			fprintf(fp, "%08x  // %04x: %s\n", rom[n], n*4, dis);
+		}
 	}
 	fclose(fp);
 }
@@ -153,7 +167,7 @@ enum tokens {
 	tSTRING,
 	tNUMBER,
 	tORR, tAND, tADD, tSUB, tSHL, tSHR, tXOR, tTBS,
-	tSEQ, tSLT, tSGT, tREV, tBIS, tBIC, tMOV, tMHI,
+	tSEQ, tSLT, tSGT, tMOV, tBIS, tBIC, tMLO, tMHI,
 	tB, tBL, tBZ, tBNZ, tBLZ, tBLNZ, tLW, tSW,
 	tR0, tR1, tR2, tR3, tR4, tR5, tR6, tR7,
 	rR8, tR9, tR10, tR11, tR12, tR13, tR14, tR15,
@@ -169,7 +183,7 @@ char *tnames[] = {
 	"<STRING>",
 	"<NUMBER>",
 	"ORR", "AND", "ADD", "SUB", "SHL", "SHR", "XOR", "TBS",
-	"SEQ", "SLT", "SGT", "REV", "BIS", "BIC", "MOV", "MHI",
+	"SEQ", "SLT", "SGT", "MOV", "BIS", "BIC", "MLO", "MHI",
 	"B",   "BL",  "BZ",  "BNZ", "BLZ", "BLNZ", "LW", "SW",
 	"R0",  "R1",  "R2",  "R3",  "R4",  "R5",  "R6",  "R7",
 	"R8",  "R9",  "R10", "R11", "R12", "R13", "R14", "R15",
@@ -367,20 +381,22 @@ void disassemble(char *buf, unsigned pc, unsigned instr) {
 
 	switch (opfn) {
 	case 0x0B:
-	case 0x1B:
-		sprintf(buf, "REV  %s, %s", REG(d), REG(a));
-		break;
-	case 0x0E:
 		sprintf(buf, "MOV  %s, %s", REG(d), REG(b));
 		break;
-	case 0x1E:
-		sprintf(buf, "MOV  %s, #%d", REG(d), i16);
+	case 0x0E:
+		sprintf(buf, "MLO  %s, %s", REG(d), REG(b));
 		break;
 	case 0x0F:
 		sprintf(buf, "MHI  %s, %s", REG(d), REG(b));
 		break;
+	case 0x1B:
+		sprintf(buf, "MOV  %s, %d", REG(d), i16);
+		break;
+	case 0x1E:
+		sprintf(buf, "MOV  %s, #%d", REG(d), ((short)i16));
+		break;
 	case 0x1F:
-		sprintf(buf, "MHI  %s, #%d", REG(d), i16);
+		sprintf(buf, "MOV  %s, #0x%04x0000", REG(d), i16);
 		break;
 	case 0x20:
 		sprintf(buf, "LW   %s, [%s, #%d]", REG(b), REG(a), i16);
@@ -433,7 +449,7 @@ void disassemble(char *buf, unsigned pc, unsigned instr) {
 				tnames[FIRST_ALU_OP + fn], REG(b), REG(a), i16);
 			return;
 		} else {
-			sprintf(buf, "UND 0x%04x", opfn);
+			sprintf(buf, "UND  0x%02x", opfn);
 		}
 	}
 }
@@ -470,9 +486,23 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 		expect_register(tok[1]);
 		expect(tCOMMA,tok[2]);
 		expect(tNUMBER,tok[3]);
-		emit(0x1E000000 | TO_B(to_register(tok[1])) | TO_I16(num[3]));
-		if (num[3] & 0xFFFF0000)
-			emit(0x1F000000 | TO_B(to_register(tok[1])) | (TO_I16(num[3] >> 16)));
+		if (num[3] == 0xFFFF) {
+			/* special case, need to use unsigned MOV */
+			emit(0x1B00FFFF | TO_B(to_register(tok[1])));
+			return;
+		}
+		tmp = num[3] & 0xFFFF8000;
+		if ((tmp == 0) || (tmp == 0xFFFF8000)) {
+			/* otherwise, sign extending MLO instruction will work */
+			emit(0x1E000000 | TO_B(to_register(tok[1])) | TO_I16(num[3]));
+			return;
+		}
+		/* MHI instruction to set the high bits */
+		emit(0x1F000000 | TO_B(to_register(tok[1])) | (TO_I16(num[3] >> 16)));
+		if (num[3] & 0xFFFF) {
+			/* OR in the low bits if present */
+			emit(0x10000000 | TO_B(to_register(tok[1])) | TO_I16(num[3]));
+		}
 		return;
 	case tMHI:
 		expect_register(tok[1]);
