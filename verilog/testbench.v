@@ -60,16 +60,26 @@ initial begin
 	$dumpvars(0,testbench);
 end
 
-initial #400 $finish;
+initial #1000 $finish;
 
-initial
-	$monitor("%05t: pc=%h ir=%h R> %h %h %h %h",
-		$time, cpu.pc, cpu.ir,
+always @(posedge clk) begin
+	if (cpu.ir == 32'hFFFFFFFF) begin
+		$display("PC> EXIT");
+		$finish();
+	end
+	if (cpu.ir == 32'hFFFFFFFE) begin
+		$display("PC> ERROR");
+		$finish();
+	end
+	$display("PC> %h I> %h  R> %h %h %h %h %h",
+		cpu.pc, cpu.ir,
 		cpu.REGS.R[0],
 		cpu.REGS.R[1],
 		cpu.REGS.R[2],
+		cpu.REGS.R[14],
 		cpu.REGS.R[15]
 		);
+end
 
 endmodule
 

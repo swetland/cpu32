@@ -12,8 +12,13 @@ module rom #(parameter DWIDTH=16, parameter AWIDTH=8) (
 
 	reg [DWIDTH-1:0] rom[0:2**AWIDTH-1];
 
+	reg [256:0] romfile;
+
 	initial
-		$readmemh("rom.txt", rom);
+		if ($value$plusargs("ROM=%s",romfile))
+			$readmemh(romfile, rom);
+		else
+			$readmemh("rom.txt", rom);
 
 	assign data = rom[addr];
 endmodule
