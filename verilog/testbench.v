@@ -48,6 +48,13 @@ ram #(32,8) ram(
 	.we(ramwe)
 	);
 
+teleprinter io(
+	.clk(clk),
+	.we(ramwe),
+	.cs(ramaddr[31:28] == 4'hE),
+	.data(ramwdata[7:0])
+);
+
 initial begin
 	$dumpfile("testbench.vcd");
 	$dumpvars(0,testbench);
@@ -61,8 +68,19 @@ initial
 		cpu.REGS.R[0],
 		cpu.REGS.R[1],
 		cpu.REGS.R[2],
-		cpu.REGS.R[3]
+		cpu.REGS.R[15]
 		);
 
+endmodule
+
+module teleprinter (
+	input we,
+	input cs,
+	input clk,
+	input [7:0] data
+	);
+	always @(posedge clk)
+		if (cs & we)
+			$write("%c", data);
 endmodule
 
