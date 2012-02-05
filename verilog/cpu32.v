@@ -14,7 +14,7 @@ module cpu32 (
 
 wire [31:0] ir, pc;
 
-wire [31:0] next_pc, pc_adjust;
+wire [31:0] next_pc, pc_plus_4;
 
 wire [3:0] opcode, opfunc, opsela, opselb, opseld;
 wire [15:0] opimm16;
@@ -35,18 +35,22 @@ wire ctl_branch;   // 1 = immediate branch
 wire ctl_ram_op;
 wire ctl_imm16;    // 0 = bdata, 1 = imm16 -> alu right
 wire ctl_adata_zero;
+wire ctl_link_bit; // 1 if this is a branch instruction w/ link
 
 wire [3:0] ctl_alu_func;
 
 // cheesy decoder -- TODO: write for real
-assign ctl_regs_we = ((opcode[3:1] == 0) || (opcode == 2));
-assign ctl_d_or_b = ((opcode == 1) || (opcode == 2));
+assign ctl_regs_we = 
+	(opcode[3:1] == 0) ||
+	(opcode == 2) ||
+	(ctl_branch && ctl_link_bit);
+assign ctl_d_or_b = ((opcode == 1) || (opcode == 2) || (opcode == 4));
 assign ctl_ram_rd = (opcode == 2);
 assign ctl_ram_we = (opcode == 3);
 assign ctl_ram_op = ((opcode == 2) || (opcode == 3));
 assign ctl_alu_func = ctl_ram_op ? 4'b0010 : opfunc;
 assign ctl_imm16 = (opcode != 0);
-
+assign ctl_link_bit = opfunc[3]; 
 assign ctl_adata_zero = (adata == 32'h0);
 
 // branch if it is a branch opcode and the condition is met
@@ -69,23 +73,25 @@ regfile #(32,4) REGS (
 	.bsel(opselb), .bdata(bdata)
 	);
 
-mux2 #(32) wdata_mux(
-	.sel(ctl_ram_rd),
+mux4 #(32) wdata_mux(
+	.sel({ctl_branch,ctl_ram_rd}),
 	.in0(result),
 	.in1(d_data_r),
+	.in2(pc_plus_4),
+	.in3(pc_plus_4),
 	.out(wdata)
 	);
 
-assign next_pc = pc + pc_adjust;
+assign pc_plus_4 = (pc + 32'h4);
 
 wire S;
 assign S = opimm16[15];
 
 mux2 #(32) pc_source(
 	.sel(ctl_branch),
-	.in0(4),
-	.in1( {S,S,S,S,S,S,S,S,S,S,S,S,S,S,opimm16,2'h0} ),
-	.out(pc_adjust)
+	.in0(pc_plus_4),
+	.in1( pc + {S,S,S,S,S,S,S,S,S,S,S,S,S,S,opimm16,2'h0} ),
+	.out(next_pc)
 	);
 
 assign i_addr = pc;
