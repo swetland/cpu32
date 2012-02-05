@@ -139,8 +139,8 @@ void save(const char *fn) {
 	FILE *fp = fopen(fn, "w");
 	if (!fp) die("cannot write to '%s'", fn);
 	for (n = 0; n < PC; n++) {
-		disassemble(dis, n, rom[n]);
-		fprintf(fp, "%08x  // %08x: %s\n", rom[n], n, dis);
+		disassemble(dis, n * 4, rom[n]);
+		fprintf(fp, "%08x  // %08x: %s\n", rom[n], n*4, dis);
 	}
 	fclose(fp);
 }
@@ -357,7 +357,7 @@ void disassemble(char *buf, unsigned pc, unsigned instr) {
 	unsigned b = (instr >> 16) & 0xF;
 	unsigned d = (instr >> 12) & 0xF;
 	unsigned i16 = instr & 0xFFFF;
-	short s16 = i16;
+	int s16 = ((short) i16) * 4;
 
 		/* check for special forms */
 	if (instr == 0) {
@@ -467,7 +467,7 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 		if (tok[0] == tB) {
 			instr = 0x43000000;
 		} else {
-			instr = 0x4B000000;
+			instr = 0x4B0F0000;
 		}
 		if (tok[1] == tSTRING) {
 			emit(instr);
@@ -486,8 +486,8 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 		switch (tok[0]) {
 		case tBZ:   instr = 0x41000000; break;
 		case tBNZ:  instr = 0x42000000; break;
-		case tBLZ:  instr = 0x49000000; break;
-		case tBLNZ: instr = 0x4A000000; break;
+		case tBLZ:  instr = 0x490F0000; break;
+		case tBLNZ: instr = 0x4A0F0000; break;
 		}
 		expect_register(tok[1]);
 		expect(tCOMMA,tok[2]);
