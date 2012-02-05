@@ -159,7 +159,7 @@ enum tokens {
 	rR8, tR9, tR10, tR11, tR12, tR13, tR14, tR15,
 	tSP, tLR,
 	tNOP, 
-	tEQU,
+	tEQU, tWORD, tASCII, tASCIIZ,
 	NUMTOKENS,
 };
 
@@ -175,7 +175,7 @@ char *tnames[] = {
 	"R8",  "R9",  "R10", "R11", "R12", "R13", "R14", "R15",
 	"SP",  "LR",
 	"NOP",
-	"EQU",
+	"EQU", "WORD", "STRING", "ASCIIZ"
 };
 
 #define FIRST_ALU_OP	tORR
@@ -208,11 +208,23 @@ int is_stopchar(unsigned x) {
 	case '[':
 	case ']':
 	case '.':
+	case '"':
 		return 1;
 	default:
 		return 0;
 	}
 }	
+int is_eoschar(unsigned x) {
+	switch (x) {
+	case 0:
+	case '\t':
+	case '\r':
+	case '"':
+		return 1;
+	default:
+		return 0;
+	}
+}
 
 int tokenize(char *line, unsigned *tok, unsigned *num, char **str) {
 	char *s;
@@ -267,6 +279,15 @@ int tokenize(char *line, unsigned *tok, unsigned *num, char **str) {
 			num[count] = 0;
 			tok[count++] = tDOT;
 			line++;
+			continue;
+		case '"':
+			str[count] = ++line;
+			num[count] = 0;
+			tok[count++] = tSTRING;
+			while (!is_eoschar(*line)) line++;
+			if (*line != '"')
+				die("unterminated string");
+			*line++ = 0;
 			continue;
 		}
 
@@ -504,6 +525,33 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 		instr |= TO_B(to_register(tok[1])) | TO_A(to_register(tok[4]) | TO_I16(tmp));
 		emit(instr);
 		return;
+	case tWORD:
+		tmp = 1;
+		for (;;) {
+			expect(tNUMBER, tok[tmp]);
+			emit(num[tmp++]);
+			if (tok[tmp] != tCOMMA)
+				break;
+			tmp++;
+		}
+		return;
+	case tASCII:
+	case tASCIIZ: {
+		unsigned n = 0, c = 0; 
+		const unsigned char *s = (void*) str[1];
+		expect(tSTRING, tok[1]);
+		while (*s) {
+			n |= ((*s) << (c++ * 8));
+			if (c == 4) {
+				emit(n);
+				n = 0;
+				c = 0;
+			}
+			s++;
+		}
+		emit(n);
+		return;
+	}
 	}
 	if (is_alu_op(tok[0])) {
 		expect_register(tok[1]);
