@@ -10,11 +10,8 @@ all: a32 testbench
 TESTS := $(wildcard tests/*.s)
 RESULTS := $(TESTS:.s=.s.pass)
 
-testbench: $(SRC) rom.txt
+testbench: $(SRC) 
 	iverilog -o testbench $(SRC)
-
-rom.txt: rom.s a32
-	./a32 rom.s rom.txt
 
 a32: a32.c
 	gcc -g -Wall -o a32 a32.c
