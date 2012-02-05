@@ -10,7 +10,7 @@ all: a32 testbench
 testbench: $(SRC) rom.txt
 	iverilog -o testbench $(SRC)
 
-rom.txt: rom.s
+rom.txt: rom.s a32
 	./a32 rom.s rom.txt
 
 a32: a32.c
