@@ -1,14 +1,17 @@
 # Copyright 2012, Brian Swetland.  Use at your own risk.
 
-SRC := testbench.v cpu32.v alu.v ram.v rom.v regfile.v library.v
+SRC := verilog/testbench.v
+SRC += verilog/ram.v verilog/rom.v
+SRC += verilog/cpu32.v verilog/alu.v verilog/regfile.v
+SRC += verilog/library.v
 
 all: a32 testbench
 
 testbench: $(SRC) rom.txt
 	iverilog -o testbench $(SRC)
 
-rom.txt: rom.asm
-	./a32 rom.asm rom.txt
+rom.txt: rom.s
+	./a32 rom.s rom.txt
 
 a32: a32.c
 	gcc -g -Wall -o a32 a32.c
