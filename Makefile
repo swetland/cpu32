@@ -7,6 +7,9 @@ SRC += verilog/library.v
 
 all: a32 testbench
 
+TESTS := $(wildcard tests/*.s)
+RESULTS := $(TESTS:.s=.s.pass)
+
 testbench: $(SRC) rom.txt
 	iverilog -o testbench $(SRC)
 
@@ -18,3 +21,10 @@ a32: a32.c
 
 clean::
 	rm -f testbench testbench.vcd a32 rom.txt
+	rm -rf tests/*.out tests/*.txt tests/*.trace tests/*.pass
+
+tests/%.s.pass: tests/%.s
+	@./runtest.sh $<
+	@touch $@
+
+tests:: a32 testbench $(RESULTS)
