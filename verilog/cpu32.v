@@ -34,18 +34,25 @@ wire ctl_d_or_b;   // 0 = write to R[opseld], 1 = R[opselb]
 wire ctl_branch;   // 1 = immediate branch
 wire ctl_ram_op;
 wire ctl_imm16;    // 0 = bdata, 1 = imm16 -> alu right
+wire ctl_adata_zero;
 
 wire [3:0] ctl_alu_func;
 
 // cheesy decoder -- TODO: write for real
 assign ctl_regs_we = ((opcode[3:1] == 0) || (opcode == 2));
 assign ctl_d_or_b = ((opcode == 1) || (opcode == 2));
-assign ctl_branch = (opcode == 4);
 assign ctl_ram_rd = (opcode == 2);
 assign ctl_ram_we = (opcode == 3);
 assign ctl_ram_op = ((opcode == 2) || (opcode == 3));
 assign ctl_alu_func = ctl_ram_op ? 4'b0010 : opfunc;
 assign ctl_imm16 = (opcode != 0);
+
+assign ctl_adata_zero = (adata == 32'h0);
+
+// branch if it is a branch opcode and the condition is met
+// unconditional branches set both condition bits
+assign ctl_branch = (opcode == 4) & 
+	((opfunc[0] & ctl_adata_zero) || (opfunc[1] & (!ctl_adata_zero)));
 
 register #(32) PC (
 	.clk(clk),

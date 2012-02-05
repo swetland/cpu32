@@ -1,4 +1,13 @@
 NOP
+
+MOV R0, 5 
+repeat:
+SUB R0, R0, 1
+BNZ R0, repeat
+
+B .
+
+NOP
 MOV R0, 0x5038
 MHI R14, 0x7777
 MOV R14, 0
