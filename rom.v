@@ -1,0 +1,22 @@
+// ROM
+//
+// Copyright 2009, Brian Swetland.  Use at your own risk.
+
+`timescale 1ns/1ns
+
+module rom #(parameter DWIDTH=16, parameter AWIDTH=8) (
+	input clk,
+	input [AWIDTH-1:0] addr,
+	output [DWIDTH-1:0] data
+	);
+
+	reg [DWIDTH-1:0] rom[0:2**AWIDTH-1];
+
+	initial
+		$readmemh("rom.txt", rom);
+
+	assign data = rom[addr];
+endmodule
+
+				   
+		  
