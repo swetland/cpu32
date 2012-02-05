@@ -406,6 +406,24 @@ void disassemble(char *buf, unsigned pc, unsigned instr) {
 	case 0x4B:
 		sprintf(buf, "BL   0x%08x", (pc + s16));
 		break;
+	case 0x51:
+		sprintf(buf, "BZ   %s, %s", REG(a), REG(b));
+		break;
+	case 0x52:
+		sprintf(buf, "BNZ  %s, %s", REG(a), REG(b));
+		break;
+	case 0x53:
+		sprintf(buf, "B    %s", REG(b));
+		break;
+	case 0x59:
+		sprintf(buf, "BLZ  %s, %s", REG(a), REG(b));
+		break;
+	case 0x5A:
+		sprintf(buf, "BLNZ %s, %s", REG(a), REG(b));
+		break;
+	case 0x5B:
+		sprintf(buf, "BL   %s", REG(b));
+		break;
 	default:
 		if (op == 0) {
 			sprintf(buf, "%-5s%s, %s, %s",
@@ -469,7 +487,9 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 		} else {
 			instr = 0x4B0F0000;
 		}
-		if (tok[1] == tSTRING) {
+		if (is_register(tok[1])) {
+			emit(instr | 0x10000000 | TO_B(to_register(tok[1])));
+		} else if (tok[1] == tSTRING) {
 			emit(instr);
 			uselabel(str[1], PC - 1, 16);
 		} else if ((tok[1] == tNUMBER) || (tok[1] == tDOT)) {
@@ -492,7 +512,9 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 		expect_register(tok[1]);
 		expect(tCOMMA,tok[2]);
 		instr |= TO_A(to_register(tok[1]));
-		if (tok[3] == tSTRING) {
+		if (is_register(tok[3])) {
+			emit(instr | 0x10000000 | TO_B(to_register(tok[3])));
+		} else if (tok[3] == tSTRING) {
 			emit(instr);
 			uselabel(str[3], PC - 1, 16);
 		} else if ((tok[3] == tNUMBER) || (tok[3] == tDOT)) {

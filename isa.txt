@@ -24,15 +24,15 @@ Core Instruction Set
 4A BLNZ Ra, rel16        if Ra != 0: R15 = PC + 4, PC += I
 4B BL rel16              R15 = PC + 4, PC += I
 
+51 BZ Ra, Rb             if Ra == 0: PC = Rb
+52 BNZ Ra, Rb            if Ra != 0: PC = Rb
+53 B Rb                  PC = Rb
+59 BNZ Ra, Rb            if Ra == 0: R15 = PC, PC = Rb
+5A BLNZ Ra, Rb           if Ra != 0: R15 = PC, PC = Rb
+5B BL Rb                 R15 = PC, PC = Rb
+
 Extended Instruction Set
 ------------------------
-
-51 BZ Ra, [Rb]           if Ra == 0: PC = Rb
-52 BNZ Ra, [Rb]          if Ra != 0: PC = Rb
-53 B [Rb]                PC = Rb
-59 BNZ Ra, [Rb]          if Ra == 0: R15 = PC, PC = Rb
-5A BLNZ Ra, [Rb]         if Ra != 0: R15 = PC, PC = Rb
-5B BL [Rb]               R15 = PC, PC = Rb
 
 60 J rel24               PC = PC + I
 68 JL rel24              R15 = PC + 4, PC = PC + I
@@ -63,4 +63,6 @@ Open Issues
 - should ALU IMM16 be signed?  If so, how do we load unsigned data?
 - consider dropping REV in favor of MOVU or MOVS?
 - figure out func field coding for variant LW/SW instructions
-
+- syntax for conditional branches is confusing
+- consider allowing B [Rx] as well as B Rx?
+- allow # in front of constants

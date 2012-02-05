@@ -29,13 +29,14 @@ assign opselb = ir[19:16];
 assign opseld = ir[15:12];
 assign opimm16 = ir[15:0];
 
-wire ctl_regs_we;  // 1 = write back to register file
-wire ctl_d_or_b;   // 0 = write to R[opseld], 1 = R[opselb]
-wire ctl_branch;   // 1 = immediate branch
+wire ctl_regs_we;    // 1 = write back to register file
+wire ctl_d_or_b;     // 0 = write to R[opseld], 1 = R[opselb]
+wire ctl_branch;     // 1 = direct branch
+wire ctl_branch_ind; // 1 = indirect branch
+wire ctl_link_bit;   // 1 if the link bit is set (only for branches)
 wire ctl_ram_op;
-wire ctl_imm16;    // 0 = bdata, 1 = imm16 -> alu right
+wire ctl_imm16;      // 0 = bdata, 1 = imm16 -> alu right
 wire ctl_adata_zero;
-wire ctl_link_bit; // 1 if this is a branch instruction w/ link
 
 wire [3:0] ctl_alu_func;
 
@@ -43,7 +44,8 @@ wire [3:0] ctl_alu_func;
 assign ctl_regs_we = 
 	(opcode[3:1] == 0) ||
 	(opcode == 2) ||
-	(ctl_branch && ctl_link_bit);
+	(ctl_branch && ctl_link_bit) ||
+	(ctl_branch_ind && ctl_link_bit);
 assign ctl_d_or_b = ((opcode == 1) || (opcode == 2) || (opcode == 4));
 assign ctl_ram_rd = (opcode == 2);
 assign ctl_ram_we = (opcode == 3);
@@ -56,6 +58,8 @@ assign ctl_adata_zero = (adata == 32'h0);
 // branch if it is a branch opcode and the condition is met
 // unconditional branches set both condition bits
 assign ctl_branch = (opcode == 4) & 
+	((opfunc[0] & ctl_adata_zero) || (opfunc[1] & (!ctl_adata_zero)));
+assign ctl_branch_ind = (opcode == 5) & 
 	((opfunc[0] & ctl_adata_zero) || (opfunc[1] & (!ctl_adata_zero)));
 
 register #(32) PC (
@@ -87,10 +91,12 @@ assign pc_plus_4 = (pc + 32'h4);
 wire S;
 assign S = opimm16[15];
 
-mux2 #(32) pc_source(
-	.sel(ctl_branch),
+mux4 #(32) pc_source(
+	.sel({ctl_branch_ind,ctl_branch}),
 	.in0(pc_plus_4),
-	.in1( pc + {S,S,S,S,S,S,S,S,S,S,S,S,S,S,opimm16,2'h0} ),
+	.in1(pc + {S,S,S,S,S,S,S,S,S,S,S,S,S,S,opimm16,2'h0} ),
+	.in2(bdata),
+	.in3(bdata),
 	.out(next_pc)
 	);
 
