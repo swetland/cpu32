@@ -390,13 +390,13 @@ void disassemble(char *buf, unsigned pc, unsigned instr) {
 		sprintf(buf, "MHI  %s, %s", REG(d), REG(b));
 		break;
 	case 0x1B:
-		sprintf(buf, "MOV  %s, %d", REG(d), i16);
+		sprintf(buf, "MOV  %s, %d", REG(b), i16);
 		break;
 	case 0x1E:
-		sprintf(buf, "MOV  %s, #%d", REG(d), ((short)i16));
+		sprintf(buf, "MOV  %s, #%d", REG(b), ((short)i16));
 		break;
 	case 0x1F:
-		sprintf(buf, "MOV  %s, #0x%04x0000", REG(d), i16);
+		sprintf(buf, "MOV  %s, #0x%04x0000", REG(b), i16);
 		break;
 	case 0x20:
 		sprintf(buf, "LW   %s, [%s, #%d]", REG(b), REG(a), i16);
@@ -501,7 +501,7 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 		emit(0x1F000000 | TO_B(to_register(tok[1])) | (TO_I16(num[3] >> 16)));
 		if (num[3] & 0xFFFF) {
 			/* OR in the low bits if present */
-			emit(0x10000000 | TO_B(to_register(tok[1])) | TO_I16(num[3]));
+			emit(0x10000000 | TO_A(to_register(tok[1])) | TO_B(to_register(tok[1])) | TO_I16(num[3]));
 		}
 		return;
 	case tMHI:
