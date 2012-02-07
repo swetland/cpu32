@@ -37,7 +37,7 @@ assign cs1 = (ramaddr[31:16] == 16'hE000);
 reg [3:0] cntr;
 
 always @(posedge CLOCK_50)
-	cntr <= cntr + 1;
+	cntr <= cntr + 4'b0001;
 	
 //assign clk = CLOCK_50;
 assign clk = cntr[3];

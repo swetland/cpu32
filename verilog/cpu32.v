@@ -36,31 +36,28 @@ wire ctl_branch_ind; // 1 = indirect branch
 wire ctl_link_bit;   // 1 if the link bit is set (only for branches)
 wire ctl_ram_op;
 wire ctl_imm16;      // 0 = bdata, 1 = imm16 -> alu right
-wire ctl_adata_zero;
-
 wire [3:0] ctl_alu_func;
+wire ctl_ram_we;
+wire ctl_ram_rd;
 
-// cheesy decoder -- TODO: write for real
-assign ctl_regs_we = 
-	(opcode[3:1] == 0) ||
-	(opcode == 2) ||
-	(ctl_branch && ctl_link_bit) ||
-	(ctl_branch_ind && ctl_link_bit);
-assign ctl_d_or_b = ((opcode == 1) || (opcode == 2) || (opcode == 4));
-assign ctl_ram_rd = (opcode == 2);
-assign ctl_ram_we = (opcode == 3);
-assign ctl_ram_op = ((opcode == 2) || (opcode == 3));
-assign ctl_alu_func = ctl_ram_op ? 4'b0010 : opfunc;
-assign ctl_imm16 = (opcode != 0);
-assign ctl_link_bit = opfunc[3]; 
+control control(
+	.opcode(opcode),
+	.opfunc(opfunc),
+	.ctl_adata_zero(ctl_adata_zero),
+	.ctl_regs_we(ctl_regs_we),
+	.ctl_d_or_b(ctl_d_or_b),
+	.ctl_branch(ctl_branch),
+	.ctl_branch_ind(ctl_branch_ind),
+	.ctl_ram_op(ctl_ram_op),
+	.ctl_imm16(ctl_imm16),
+	.ctl_ram_we(ctl_ram_we),
+	.ctl_ram_rd(ctl_ram_rd),
+	.ctl_link_bit(ctl_link_bit),
+	.ctl_alu_func(ctl_alu_func)
+	);
+
+wire ctl_adata_zero;
 assign ctl_adata_zero = (adata == 32'h0);
-
-// branch if it is a branch opcode and the condition is met
-// unconditional branches set both condition bits
-assign ctl_branch = (opcode == 4) & 
-	((opfunc[0] & ctl_adata_zero) || (opfunc[1] & (!ctl_adata_zero)));
-assign ctl_branch_ind = (opcode == 5) & 
-	((opfunc[0] & ctl_adata_zero) || (opfunc[1] & (!ctl_adata_zero)));
 
 register #(32) PC (
 	.clk(clk),

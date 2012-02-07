@@ -1,7 +1,7 @@
 # Copyright 2012, Brian Swetland.  Use at your own risk.
 
 SRC := verilog/testbench.v
-SRC += verilog/ram.v verilog/rom.v
+SRC += verilog/ram.v verilog/rom.v verilog/control.v
 SRC += verilog/cpu32.v verilog/alu.v verilog/regfile.v
 SRC += verilog/library.v
 
