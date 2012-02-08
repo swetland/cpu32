@@ -21,13 +21,16 @@ always @ (*)
 	2'b10: out = 4'b0100;
 	2'b11: out = 4'b1000;
 	endcase
-
 endmodule
 
 
-module decoder8 (input [2:0] in, output reg [7:0] out);
+module decoder8 (
+	input [2:0] in,
+	output reg [7:0] out
+	);
+
 always @ (*)
-  case (in)
+	case (in)
 	3'b000: out = 8'b00000001;
 	3'b001: out = 8'b00000010;
 	3'b010: out = 8'b00000100;
@@ -36,51 +39,49 @@ always @ (*)
 	3'b101: out = 8'b00100000;
 	3'b110: out = 8'b01000000;
 	3'b111: out = 8'b10000000;
-  endcase
+	endcase
 endmodule
 
 module decoder8en (input [2:0] in, input en, output reg [7:0] out);
 always @ (*)
-  if (en)
-	case (in)
-	  3'b000: out = 8'b00000001;
-	  3'b001: out = 8'b00000010;
-	  3'b010: out = 8'b00000100;
-	  3'b011: out = 8'b00001000;
-	  3'b100: out = 8'b00010000;
-	  3'b101: out = 8'b00100000;
-	  3'b110: out = 8'b01000000;
-	  3'b111: out = 8'b10000000;
-	endcase
-  else
-	out = 8'b00000000;
+	if (en)
+		case (in)
+		3'b000: out = 8'b00000001;
+		3'b001: out = 8'b00000010;
+		3'b010: out = 8'b00000100;
+		3'b011: out = 8'b00001000;
+		3'b100: out = 8'b00010000;
+		3'b101: out = 8'b00100000;
+		3'b110: out = 8'b01000000;
+		3'b111: out = 8'b10000000;
+		endcase
+	else
+		out = 8'b00000000;
 endmodule
 
  
-module mux2 #(parameter WIDTH=16)
-	(
+module mux2 #(parameter WIDTH=16) (
 	input sel,
 	input [WIDTH-1:0] in0, in1,
 	output [WIDTH-1:0] out
 	);
 
 assign out = sel ? in1 : in0 ;
-
 endmodule
 
-module mux4 #(parameter WIDTH=16)
-   (
+
+module mux4 #(parameter WIDTH=16) (
 	input [1:0] sel,
 	input [WIDTH-1:0] in0,in1,in2,in3,
 	output reg [WIDTH-1:0] out
 	);
 always @ (*)
-  case (sel)
+	case (sel)
 	2'b00: out <= in0;
 	2'b01: out <= in1;
 	2'b10: out <= in2;
 	2'b11: out <= in3;
-  endcase
+	endcase
 endmodule
 
 
@@ -101,6 +102,7 @@ always @ (*)
 	3'b111: out <= in7;
 	endcase
 endmodule
+
 
 module mux16 #(parameter WIDTH=16) (
 	input [3:0] sel,
@@ -128,18 +130,24 @@ always @ (*)
 	4'b1111: out <= in15;
 	endcase
 endmodule
+
+
 module register #(parameter WIDTH=16) (
 	input clk,
 	input en,
+	input reset,
 	input [WIDTH-1:0] din,
 	output [WIDTH-1:0] dout
 	);
 	
 reg [WIDTH-1:0] data;
 initial data = 0;
-always @ (posedge clk)
-	if (en)
+always @ (posedge clk or posedge reset)
+	if (reset)
+		data <= 32'h00000000;
+	else if (en)
 		data <= din;
+
 assign dout = data;
 endmodule
 
