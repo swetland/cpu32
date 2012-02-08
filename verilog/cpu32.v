@@ -4,6 +4,7 @@
 
 module cpu32 (
 	input clk,
+	input reset,
 	output [31:0] i_addr,
 	input [31:0] i_data,
 	output [31:0] d_addr,
@@ -61,6 +62,7 @@ assign ctl_adata_zero = (adata == 32'h0);
 
 register #(32) PC (
 	.clk(clk),
+	.reset(reset),
 	.en(1),
 	.din(next_pc),
 	.dout(pc)
