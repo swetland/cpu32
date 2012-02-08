@@ -33,24 +33,18 @@ wire cs0,cs1;
 
 assign cs0 = (ramaddr[31:16] == 16'h0000);
 assign cs1 = (ramaddr[31:16] == 16'hE000);
-
-reg [3:0] cntr;
-
-always @(posedge CLOCK_50)
-	cntr <= cntr + 4'b0001;
-	
-//assign clk = CLOCK_50;
-assign clk = cntr[3];
+assign clk = CLOCK_50;
 
 cpu32 cpu(
-        .clk(clk),
-        .i_addr(romaddr),
-        .i_data(romdata),
-        .d_data_r(cpurdata),
-        .d_data_w(ramwdata),
-        .d_addr(ramaddr),
-        .d_we(ramwe)
-        );
+	.clk(clk),
+	.reset(SW[0]),
+	.i_addr(romaddr),
+	.i_data(romdata),
+	.d_data_r(cpurdata),
+	.d_data_w(ramwdata),
+	.d_addr(ramaddr),
+	.d_we(ramwe)
+	);
 
 // ugly hack for now
 mux2 #(32) rdatamux(
@@ -61,9 +55,9 @@ mux2 #(32) rdatamux(
 	);
 	
 rom rom(
-        .addr(romaddr[9:2]),
-        .data(romdata)
-        );
+	.addr(romaddr[9:2]),
+	.data(romdata)
+	);
 
 aram ram(
 	.clock(clk),
@@ -73,8 +67,12 @@ aram ram(
 	.wren(cs0 & ramwe)
 );
 
-assign GPIO_A[1] = bclk;
-assign GPIO_A[3] = uartrdata[0];
+wire bclk;
+uartclock bclock(
+	.reset(reset),
+	.clk(clk),
+	.bclk(bclk)
+	);
 
 uart uart0(
 	.clk(clk),
@@ -86,16 +84,8 @@ uart uart0(
 	.tx(GPIO_A[7])
 	);
 
-reg [8:0] bcnt;
-reg bclk;
-
-always @(posedge CLOCK_50)
-	if (bcnt == 217) begin
-			bcnt <= 0;
-			bclk = ~bclk;
-	end else begin
-			bcnt = bcnt + 1;
-	end
+assign GPIO_A[1] = bclk;
+assign GPIO_A[3] = uartrdata[0];
 
 reg [7:0] DBG;
 assign LED = DBG;
@@ -114,3 +104,25 @@ reg [31:0] rom[0:2**7];
 initial $readmemh("fw.txt", rom);
 assign data = rom[addr];
 endmodule
+
+
+module uartclock(
+	input reset,
+	input clk,
+	output bclk
+	);
+reg [8:0] bcnt;
+reg bclk0;
+always @(posedge clk or posedge reset)
+	if (reset) begin
+		bcnt <= 9'h0;
+		bclk0 <= 0;
+	end else if (bcnt == 13 /*217*/) begin
+		bcnt <= 9'h0;
+		bclk0 <= ~bclk0;
+	end else begin
+		bcnt <= bcnt + 9'h1;
+	end
+	assign bclk = bclk0;
+endmodule
+
