@@ -3,6 +3,7 @@
 SRC := verilog/testbench.v
 SRC += verilog/ram.v verilog/rom.v verilog/control.v
 SRC += verilog/cpu32.v verilog/alu.v verilog/regfile.v
+SRC += verilog/uart.v
 SRC += verilog/library.v
 
 all: a32 testbench

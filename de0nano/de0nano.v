@@ -35,9 +35,11 @@ assign cs0 = (ramaddr[31:16] == 16'h0000);
 assign cs1 = (ramaddr[31:16] == 16'hE000);
 assign clk = CLOCK_50;
 
+assign reset = ~KEY[0];
+
 cpu32 cpu(
 	.clk(clk),
-	.reset(SW[0]),
+	.reset(reset),
 	.i_addr(romaddr),
 	.i_data(romdata),
 	.d_data_r(cpurdata),
@@ -67,24 +69,15 @@ aram ram(
 	.wren(cs0 & ramwe)
 );
 
-wire bclk;
-uartclock bclock(
-	.reset(reset),
-	.clk(clk),
-	.bclk(bclk)
-	);
-
 uart uart0(
 	.clk(clk),
-	.bclk(bclk),
-	.reset(0),
+	.reset(reset),
 	.we(cs1 & ramwe),
 	.wdata(ramwdata),
 	.rdata(uartrdata[7:0]),
 	.tx(GPIO_A[7])
 	);
 
-assign GPIO_A[1] = bclk;
 assign GPIO_A[3] = uartrdata[0];
 
 reg [7:0] DBG;
@@ -103,26 +96,5 @@ module rom(
 reg [31:0] rom[0:2**7];
 initial $readmemh("fw.txt", rom);
 assign data = rom[addr];
-endmodule
-
-
-module uartclock(
-	input reset,
-	input clk,
-	output bclk
-	);
-reg [8:0] bcnt;
-reg bclk0;
-always @(posedge clk or posedge reset)
-	if (reset) begin
-		bcnt <= 9'h0;
-		bclk0 <= 0;
-	end else if (bcnt == 13 /*217*/) begin
-		bcnt <= 9'h0;
-		bclk0 <= ~bclk0;
-	end else begin
-		bcnt <= bcnt + 9'h1;
-	end
-	assign bclk = bclk0;
 endmodule
 

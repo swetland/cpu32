@@ -13,8 +13,10 @@ wire ramwe;
 initial
 	begin
 		reset = 0;
-		#20
+		#15
 		reset = 1;
+		#20
+		reset = 0;
 	end
 
 always
@@ -25,11 +27,15 @@ always
 		#10 ;
 	end
 
+wire [7:0] urdata;
+
 cpu32 cpu(
 	.clk(clk),
+	.reset(reset),
 	.i_addr(romaddr),
 	.i_data(romdata),
-	.d_data_r(ramrdata),
+//	.d_data_r(ramrdata),
+	.d_data_r({24'b0,urdata}),
 	.d_data_w(ramwdata),
 	.d_addr(ramaddr),
 	.d_we(ramwe)
@@ -48,10 +54,22 @@ ram #(32,8) ram(
 	.we(ramwe)
 	);
 
+wire tx;
+
+uart uart0(
+	.clk(clk),
+	.reset(reset),
+	.wdata(ramwdata[7:0]),
+	.rdata(urdata),
+	.we(ramwe & (ramaddr[31:28] == 4'hE)),
+	.tx(tx)
+	);
+	
+
 teleprinter io(
 	.clk(clk),
 	.we(ramwe),
-	.cs(ramaddr[31:28] == 4'hE),
+	.cs(ramaddr[31:28] == 4'h8),
 	.data(ramwdata[7:0])
 );
 
@@ -60,8 +78,9 @@ initial begin
 	$dumpvars(0,testbench);
 end
 
-initial #1000 $finish;
+initial #1000000 $finish;
 
+/*
 always @(posedge clk) begin
 	if (cpu.ir == 32'hFFFFFFFF) begin
 		$display("PC> EXIT");
@@ -80,7 +99,7 @@ always @(posedge clk) begin
 		cpu.REGS.R[15]
 		);
 end
-
+*/
 endmodule
 
 module teleprinter (

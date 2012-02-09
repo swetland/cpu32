@@ -1,36 +1,38 @@
 	NOP
-	MOV R0, 0xAA
-	MOV R14, 0xF0000000
-	SW R0, [R15]
-	B loop
+	MOV	R14, 0xF0000000
+	MOV	R13, 0xE0000000
 
-big:
-	MOV R9, 0xE0000000
-	MOV R8, 0x34
-	SW R8, [R9]
+	MOV	R0, 0x30
+	BL	uart_send
+	MOV	R0, 0x31
+	BL	uart_send
+	MOV	R0, 0x32
+	BL	uart_send
+	MOV	R0, 0x33
+	BL	uart_send
 
-	ADD R0, R0, 1
-	SW R0, [R1]
-	MOV R2, 5000000
-little:
-	SUB R2, R2, 1
-	BNZ R2, little
-	B big
+	MOV	R0, 0
+	MOV	R2, 256
+xmit_loop:
+	SW	R0, [R14]
+wait_fifo:
+	LW	R1, [R13]
+	BNZ	R1, wait_fifo
+	SW	R0, [R13]
+	ADD	R0, R0, 1
+	SUB	R2, R2, 1
+	BNZ	R2, xmit_loop
 
-loop:
-	MOV R0, 0x34
-	BL dputc
-	MOV R0, 0x32
-	BL dputc
-	MOV R0, 10
-	BL dputc
-	B loop
+	MOV	R0, 0
+	SW	R0, [R14]
+	B	.
 
-dputc:
-	MOV R1, 0xE0000000
-wait:
-	LW R2, [R1]
-	BNZ R2, wait
-	SW R0, [R1]
-	B R15
+
+uart_send:
+	MOV	R13, 0xE0000000
+uart_wait:
+	LW	R12, [R13]
+	BNZ	R12, uart_wait
+	SW	R0, [R13]
+	B	R15
 
