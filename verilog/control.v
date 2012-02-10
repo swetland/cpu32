@@ -8,11 +8,12 @@ module control (
 	output ctl_d_or_b,
 	output ctl_branch,
 	output ctl_branch_ind,
-	output ctl_ram_op,
 	output ctl_imm16,
-	output ctl_link_bit,
 	output [3:0] ctl_alu_func
 	);
+
+wire ctl_ram_op;
+wire ctl_link_bit;
 
 // cheesy decoder -- TODO: write for real
 assign ctl_regs_we = 

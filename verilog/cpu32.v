@@ -34,8 +34,6 @@ wire ctl_regs_we;    // 1 = write back to register file
 wire ctl_d_or_b;     // 0 = write to R[opseld], 1 = R[opselb]
 wire ctl_branch;     // 1 = direct branch
 wire ctl_branch_ind; // 1 = indirect branch
-wire ctl_link_bit;   // 1 if the link bit is set (only for branches)
-wire ctl_ram_op;
 wire ctl_imm16;      // 0 = bdata, 1 = imm16 -> alu right
 wire [3:0] ctl_alu_func;
 wire ctl_ram_we;
@@ -49,11 +47,9 @@ control control(
 	.ctl_d_or_b(ctl_d_or_b),
 	.ctl_branch(ctl_branch),
 	.ctl_branch_ind(ctl_branch_ind),
-	.ctl_ram_op(ctl_ram_op),
 	.ctl_imm16(ctl_imm16),
 	.ctl_ram_we(ctl_ram_we),
 	.ctl_ram_rd(ctl_ram_rd),
-	.ctl_link_bit(ctl_link_bit),
 	.ctl_alu_func(ctl_alu_func)
 	);
 
