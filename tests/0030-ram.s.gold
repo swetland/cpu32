@@ -1,0 +1,10 @@
+PC> 00000000 I> 1f001122  R> xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
+PC> 00000004 I> 10003344  R> 11220000 xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
+PC> 00000008 I> 1e010074  R> 11223344 xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
+PC> 0000000c I> 30100000  R> 11223344 00000074 xxxxxxxx xxxxxxxx xxxxxxxx
+PC> 00000010 I> 1f027777  R> 11223344 00000074 xxxxxxxx xxxxxxxx xxxxxxxx
+PC> 00000014 I> 10227777  R> 11223344 00000074 77770000 xxxxxxxx xxxxxxxx
+PC> 00000018 I> 201e0000  R> 11223344 00000074 77777777 xxxxxxxx xxxxxxxx
+PC> 0000001c I> 02e0f000  R> 11223344 00000074 77777777 11223344 xxxxxxxx
+PC> 00000020 I> 00000000  R> 11223344 00000074 77777777 11223344 22446688
+PC> EXIT
