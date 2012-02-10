@@ -61,13 +61,13 @@ rom rom(
 	.data(romdata)
 	);
 
-aram ram(
-	.clock(clk),
-	.address(ramaddr[10:2]),
-	.data(ramwdata),
-	.q(ramrdata),
-	.wren(cs0 & ramwe)
-);
+ram #(32,8) ram(
+	.clk(clk),
+	.addr(ramaddr[9:2]),
+	.rdata(ramrdata),
+	.wdata(ramwdata),
+	.we(ramwe)
+	);
 
 uart uart0(
 	.clk(clk),
