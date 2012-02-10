@@ -32,12 +32,13 @@ assign opimm16 = ir[15:0];
 
 wire ctl_regs_we;    // 1 = write back to register file
 wire ctl_d_or_b;     // 0 = write to R[opseld], 1 = R[opselb]
-wire ctl_branch;     // 1 = direct branch
-wire ctl_branch_ind; // 1 = indirect branch
 wire ctl_imm16;      // 0 = bdata, 1 = imm16 -> alu right
 wire [3:0] ctl_alu_func;
 wire ctl_ram_we;
 wire ctl_ram_rd;
+
+wire [1:0] ctl_wdata_src;
+wire [1:0] ctl_pc_src;
 
 control control(
 	.opcode(opcode),
@@ -45,8 +46,8 @@ control control(
 	.ctl_adata_zero(ctl_adata_zero),
 	.ctl_regs_we(ctl_regs_we),
 	.ctl_d_or_b(ctl_d_or_b),
-	.ctl_branch(ctl_branch),
-	.ctl_branch_ind(ctl_branch_ind),
+	.ctl_pc_src(ctl_pc_src),
+	.ctl_wdata_src(ctl_wdata_src),
 	.ctl_imm16(ctl_imm16),
 	.ctl_ram_we(ctl_ram_we),
 	.ctl_ram_rd(ctl_ram_rd),
@@ -73,11 +74,11 @@ regfile #(32,4) REGS (
 	);
 
 mux4 #(32) wdata_mux(
-	.sel({ctl_branch,ctl_ram_rd}),
+	.sel(ctl_wdata_src),
 	.in0(result),
 	.in1(d_data_r),
 	.in2(pc_plus_4),
-	.in3(pc_plus_4),
+	.in3(32'b0),
 	.out(wdata)
 	);
 
@@ -87,7 +88,7 @@ wire S;
 assign S = opimm16[15];
 
 mux4 #(32) pc_source(
-	.sel({ctl_branch_ind,ctl_branch}),
+	.sel(ctl_pc_src),
 	.in0(pc_plus_4),
 	.in1(pc + {S,S,S,S,S,S,S,S,S,S,S,S,S,S,opimm16,2'h0} ),
 	.in2(bdata),
@@ -101,17 +102,17 @@ assign ir = i_data;
 wire [31:0] binput;
 
 mux2 #(32) alu_right_mux(
-		.sel(ctl_imm16),
-		.in0(bdata),
-		.in1({ 16'h0, opimm16 }),
-		.out(binput)
+	.sel(ctl_imm16),
+	.in0(bdata),
+	.in1({ 16'h0, opimm16 }),
+	.out(binput)
 	);
 
 mux2 #(4) alu_wsel_mux(
-		.sel(ctl_d_or_b),
-		.in0(opseld),
-		.in1(opselb),
-		.out(alu_wsel)
+	.sel(ctl_d_or_b),
+	.in0(opseld),
+	.in1(opselb),
+	.out(alu_wsel)
 	);
 
 alu alu(
