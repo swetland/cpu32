@@ -1,0 +1,12 @@
+PC> 00000000 I> 00000000  R> xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
+PC> 00000004 I> 1df01234  R> xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
+PC> 00000008 I> 1c005678  R> 12340000 xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
+PC> 0000000c I> 40fe0005  R> 12345678 xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
+PC> 00000020 I> 1df21111  R> 12345678 xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 00000010
+PC> 00000024 I> 1c221111  R> 12345678 xxxxxxxx 11110000 xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 00000010
+PC> 00000028 I> 02020000  R> 12345678 xxxxxxxx 11111111 xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 00000010
+PC> 0000002c I> 50fef000  R> 23456789 xxxxxxxx 11111111 xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 00000010
+PC> 00000010 I> 1df17777  R> 23456789 xxxxxxxx 11111111 xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 00000010
+PC> 00000014 I> 1c117777  R> 23456789 77770000 11111111 xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 00000010
+PC> 00000018 I> 00000000  R> 23456789 77777777 11111111 xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 00000010
+PC> EXIT

@@ -29,6 +29,7 @@ always @ (*)
 	4'b0010: control = 8'b01101001; // LW Rd, [Ra, #I]
 	4'b0011: control = 8'b01010000; // SW Rd, [Ra, #I]
 	4'b0100: control = 8'b10101110; // B rel16
+	4'b0101: control = 8'b10100110; // B Rb
 	default: control = 8'b00000000;
 	endcase
 
@@ -38,7 +39,7 @@ assign {
 	} = control[7:0];
 
 assign ctl_branch_nz = opfunc[3];
-assign ctl_branch_ind = opfunc[2];
+assign ctl_branch_ind = opcode[0];
 assign ctl_branch_taken = (ctl_branch_op & (ctl_adata_zero != ctl_branch_nz));
 
 endmodule

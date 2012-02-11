@@ -17,9 +17,9 @@ Core Instruction Set
 32 SW Rd, [Ra, #I]       M(Ra + I) = Rd
 
 40 BLZ Rd, Ra, rel       if (Ra == 0) { Rd = PC + 4, PC += I }
-44 BLZ Rd, Ra, Rb        if (Ra == 0) { Rd = PC + 4, PC = Rb }
 48 BLNZ Rd, Ra, rel      if (Ra != 0) { Rd = PC + 4, PC += I }
-4C BLNZ Rd, Ra, Rb       if (Ra != 0) { Rd = PC + 4, PC = Rb }
+50 BLZ Rd, Ra, Rb        if (Ra == 0) { Rd = PC + 4, PC = Rb }
+58 BLNZ Rd, Ra, Rb       if (Ra != 0) { Rd = PC + 4, PC = Rb }
 
 Extended Instruction Set (tbd)
 ------------------------

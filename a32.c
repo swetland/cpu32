@@ -450,14 +450,14 @@ struct {
 	{ 0xFFFF0000, 0x40FE0000, "BL @r", },
 	{ 0xFF0F0000, 0x400F0000, "BZ @A, @r", },
 	{ 0xFF0F0000, 0x400E0000, "BLZ @A, @r", },
-	{ 0xFFF0F000, 0x44F0F000, "B @B", },
-	{ 0xFFF0F000, 0x44F0E000, "BL @B", },
-	{ 0xFF00F000, 0x4400F000, "BZ @A, @B", },
-	{ 0xFF00F000, 0x4400E000, "BLZ @A, @B", },
+	{ 0xFFF0F000, 0x50F0F000, "B @B", },
+	{ 0xFFF0F000, 0x50F0E000, "BL @B", },
+	{ 0xFF00F000, 0x5000F000, "BZ @A, @B", },
+	{ 0xFF00F000, 0x5000E000, "BLZ @A, @B", },
 	{ 0xFF0F0000, 0x480F0000, "BNZ @A, @r", },
 	{ 0xFF0F0000, 0x480E0000, "BLNZ @A, @r", },
-	{ 0xFF00F000, 0x4800F000, "BNZ @A, @B", },
-	{ 0xFF00F000, 0x4800E000, "BLNZ @A, @B", },
+	{ 0xFF00F000, 0x5800F000, "BNZ @A, @B", },
+	{ 0xFF00F000, 0x5800E000, "BLNZ @A, @B", },
 	{ 0x00000000, 0x00000000, "UNDEFINED", },
 };
 
@@ -535,7 +535,7 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 			tmp = 14;
 		}
 		if (is_register(tok[1])) {
-			emit(0x44F00000 | TO_D(tmp) | TO_B(to_register(tok[1])));
+			emit(0x50F00000 | TO_D(tmp) | TO_B(to_register(tok[1])));
 		} else if (tok[1] == tSTRING) {
 			emit(0x40F00000 | TO_B(tmp));
 			uselabel(str[1], PC - 1, 16);
@@ -560,7 +560,7 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 		expect(tCOMMA,tok[2]);
 		instr |= TO_A(to_register(tok[1]));
 		if (is_register(tok[3])) {
-			emit(instr | 0x04000000 | TO_D(tmp) | TO_B(to_register(tok[3])));
+			emit(instr | 0x10000000 | TO_D(tmp) | TO_B(to_register(tok[3])));
 		} else if (tok[3] == tSTRING) {
 			emit(instr | TO_B(tmp));
 			uselabel(str[3], PC - 1, 16);
