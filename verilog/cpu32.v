@@ -2,6 +2,8 @@
 //
 // Copyright 2012, Brian Swetland.  Use at your own risk.
 
+`timescale 1ns/1ns
+
 module cpu32 (
 	input clk,
 	input reset,
@@ -30,28 +32,32 @@ assign opselb = ir[19:16];
 assign opseld = ir[15:12];
 assign opimm16 = ir[15:0];
 
-wire ctl_regs_we;    // 1 = write back to register file
-wire ctl_d_or_b;     // 0 = write to R[opseld], 1 = R[opselb]
-wire ctl_imm16;      // 0 = bdata, 1 = imm16 -> alu right
-wire [3:0] ctl_alu_func;
-wire ctl_ram_we;
-wire ctl_ram_rd;
+wire [31:0] opimm16s;
+assign opimm16s[31:0] = { {16{opimm16[15]}} , opimm16[15:0] };
 
+wire ctl_alu_pc;
+wire ctl_alu_imm;
+wire ctl_regs_we;
+wire ctl_ram_we;
+wire ctl_alu_altdest;
 wire [1:0] ctl_wdata_src;
-wire [1:0] ctl_pc_src;
+wire ctl_branch_ind;
+wire ctl_branch_taken;
 
 control control(
 	.opcode(opcode),
 	.opfunc(opfunc),
 	.ctl_adata_zero(ctl_adata_zero),
+
+	.ctl_alu_pc(ctl_alu_pc),
+	.ctl_alu_imm(ctl_alu_imm),
 	.ctl_regs_we(ctl_regs_we),
-	.ctl_d_or_b(ctl_d_or_b),
-	.ctl_pc_src(ctl_pc_src),
-	.ctl_wdata_src(ctl_wdata_src),
-	.ctl_imm16(ctl_imm16),
 	.ctl_ram_we(ctl_ram_we),
-	.ctl_ram_rd(ctl_ram_rd),
-	.ctl_alu_func(ctl_alu_func)
+	.ctl_alu_altdest(ctl_alu_altdest),
+	.ctl_wdata_src(ctl_wdata_src),
+
+	.ctl_branch_ind(ctl_branch_ind),
+	.ctl_branch_taken(ctl_branch_taken)
 	);
 
 wire ctl_adata_zero;
@@ -65,7 +71,8 @@ register #(32) PC (
 	.dout(pc)
 	);
 
-regfile #(32,4) REGS (
+regfile REGS (
+	.reset(reset),
 	.clk(clk),
 	.we(ctl_regs_we),
 	.wsel(alu_wsel), .wdata(wdata),
@@ -73,7 +80,7 @@ regfile #(32,4) REGS (
 	.bsel(opselb), .bdata(bdata)
 	);
 
-mux4 #(32) wdata_mux(
+mux4 #(32) mux_wdata_src(
 	.sel(ctl_wdata_src),
 	.in0(result),
 	.in1(d_data_r),
@@ -84,40 +91,51 @@ mux4 #(32) wdata_mux(
 
 assign pc_plus_4 = (pc + 32'h4);
 
-wire S;
-assign S = opimm16[15];
+wire [31:0] branch_to;
+mux2 #(32) mux_branch_to(
+	.sel(ctl_branch_ind),
+	.in0(pc + { opimm16s[29:0], 2'b00 } ),
+	.in1(bdata),
+	.out(branch_to)
+	);
 
-mux4 #(32) pc_source(
-	.sel(ctl_pc_src),
+mux2 #(32) mux_pc_source(
+	.sel(ctl_branch_taken),
 	.in0(pc_plus_4),
-	.in1(pc + {S,S,S,S,S,S,S,S,S,S,S,S,S,S,opimm16,2'h0} ),
-	.in2(bdata),
-	.in3(bdata),
+	.in1(branch_to),
 	.out(next_pc)
 	);
 
 assign i_addr = pc;
 assign ir = i_data;
 
+wire [31:0] ainput;
 wire [31:0] binput;
 
-mux2 #(32) alu_right_mux(
-	.sel(ctl_imm16),
+mux2 #(32) mux_alu_left(
+	.sel(ctl_alu_pc),
+	.in0(adata),
+	.in1(pc_plus_4),
+	.out(ainput)
+	);
+
+mux2 #(32) mux_alu_right(
+	.sel(ctl_alu_imm),
 	.in0(bdata),
-	.in1({ 16'h0, opimm16 }),
+	.in1(opimm16s),
 	.out(binput)
 	);
 
 mux2 #(4) alu_wsel_mux(
-	.sel(ctl_d_or_b),
+	.sel(ctl_alu_altdest),
 	.in0(opseld),
 	.in1(opselb),
 	.out(alu_wsel)
 	);
 
 alu alu(
-	.opcode(ctl_alu_func),
-	.left(adata),
+	.opcode(opfunc),
+	.left(ainput),
 	.right(binput),
 	.out(result)
 	);

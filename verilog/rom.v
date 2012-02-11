@@ -5,7 +5,6 @@
 `timescale 1ns/1ns
 
 module rom #(parameter DWIDTH=16, parameter AWIDTH=8) (
-	input clk,
 	input [AWIDTH-1:0] addr,
 	output [DWIDTH-1:0] data
 	);

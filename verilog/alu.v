@@ -2,6 +2,8 @@
 //
 // Copyright 2012, Brian Swetland.  Use at your own risk.
 
+`timescale 1ns/1ns
+
 module alu (
 	input [3:0] opcode,
 	input [31:0] left,
@@ -10,10 +12,7 @@ module alu (
 	);
 
 wire [31:0] rbit;
-wire S;
-
 assign rbit = (1 << right[4:0]);
-assign S = right[15];
 
 always @ (*)
 	case (opcode)
@@ -24,14 +23,14 @@ always @ (*)
 	4'b0100: out <= (left << right[4:0]);
 	4'b0101: out <= (left >> right[4:0]);
 	4'b0110: out <= (left ^ right);
-	4'b0111: out <= (left & rbit) ? 1 : 0;
-	4'b1000: out <= (left == right) ? 1 : 0;
-	4'b1001: out <= (left <  right) ? 1 : 0;
-	4'b1010: out <= (left >  right) ? 1 : 0;
-	4'b1011: out <= right;
-	4'b1100: out <= (left | rbit);
-	4'b1101: out <= (left & ~rbit);
-	4'b1110: out <= { S,S,S,S,S,S,S,S,S,S,S,S,S,S,S,S,right[15:0] };
-	4'b1111: out <= { right[15:0], 16'h0 };
+	4'b0111: out <= (left & rbit);
+	4'b1000: out <= (left | rbit);
+	4'b1001: out <= (left & ~rbit);
+	4'b1010: out <= (left <  right) ? 1 : 0;
+	4'b1011: out <= (left >  right) ? 1 : 0;
+	4'b1100: out <= { left[31:16], right[15:0] };
+	4'b1101: out <= { right[15:0], left[31:16] };
+	4'b1110: out <= (left >>> right[4:0]);
+	4'b1111: out <= (left * right); 
 	endcase
 endmodule

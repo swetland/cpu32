@@ -2,6 +2,8 @@
 //
 // Copyright 2009, Brian Swetland.  Use at your own risk.
 
+`timescale 1ns/1ns
+
 module decoder2 (
 	input [1:0] in,
 	output out0, out1, out2, out3

@@ -12,7 +12,7 @@ TESTS := $(wildcard tests/*.s)
 RESULTS := $(TESTS:.s=.s.pass)
 
 testbench: $(SRC) 
-	iverilog -o testbench $(SRC)
+	iverilog -Wall -o testbench $(SRC)
 
 a32: a32.c
 	gcc -g -Wall -o a32 a32.c

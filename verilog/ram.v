@@ -2,6 +2,8 @@
 //
 // Copyright 2009, Brian Swetland.  Use at your own risk.
 
+`timescale 1ns/1ns
+
 module ram #(parameter DWIDTH=16, parameter AWIDTH=3) (
 	input clk, input we,
 	input [AWIDTH-1:0] addr,

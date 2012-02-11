@@ -6,7 +6,6 @@ Encoding Formats
 
 R OOOOFFFFAAAABBBBDDDDXXXXXXXXXXXX  register
 I OOOOFFFFAAAADDDDIIIIIIIIIIIIIIII  immediate
-L OOOOFFFFIIIIIIIIIIIIIIIIIIIIIIII  large (not currently used)
 
 Core Instruction Set
 --------------------
@@ -14,28 +13,23 @@ Core Instruction Set
 0X ALU Rd, Ra, Rb        see ALU ops below
 1X ALU Rd, Ra, #I  
 
-20 LW Rd, [Ra, #I]       Rd = M(Ra + I)    (TBD F->lane/width select)
-30 SW Rd, [Ra, #I]       M(Ra + I) = Rd
+22 LW Rd, [Ra, #I]       Rd = M(Ra + I)
+32 SW Rd, [Ra, #I]       M(Ra + I) = Rd
 
-41 BZ Ra, rel16          if Ra == 0: PC += I
-42 BNZ Ra, rel16         if Ra != 0: PC += I
-43 B rel16               PC += I
-49 BLZ Ra, rel16         if Ra == 0: R15 = PC + 4, PC += I
-4A BLNZ Ra, rel16        if Ra != 0: R15 = PC + 4, PC += I
-4B BL rel16              R15 = PC + 4, PC += I
+40 BLZ Rd, Ra, rel       if (Ra == 0) { Rd = PC + 4, PC += I }
+44 BLZ Rd, Ra, Rb        if (Ra == 0) { Rd = PC + 4, PC = Rb }
+48 BLNZ Rd, Ra, rel      if (Ra != 0) { Rd = PC + 4, PC += I }
+4C BLNZ Rd, Ra, Rb       if (Ra != 0) { Rd = PC + 4, PC = Rb }
 
-51 BZ Ra, Rb             if Ra == 0: PC = Rb
-52 BNZ Ra, Rb            if Ra != 0: PC = Rb
-53 B Rb                  PC = Rb
-59 BNZ Ra, Rb            if Ra == 0: R15 = PC, PC = Rb
-5A BLNZ Ra, Rb           if Ra != 0: R15 = PC, PC = Rb
-5B BL Rb                 R15 = PC, PC = Rb
-
-Extended Instruction Set
+Extended Instruction Set (tbd)
 ------------------------
 
-60 J rel24               PC = PC + I
-68 JL rel24              R15 = PC + 4, PC = PC + I
+52 LW Rd, [PC, #I]       Rd = M(PC + I)
+
+6X LB
+7X SB
+8X LH
+9X SH
 
 ALU Instructions (replace Rb w/ #I for immediate form)
 ------------------------------------------------------
@@ -47,21 +41,33 @@ X3 SUB Rd, Ra, Rb        Rd = Ra - Rb
 X4 SHL Rd, Ra, Rb        Rd = Ra << Rb[0:4]
 X5 SHR Rd, Ra, Rb        Rd = Ra >> Rb[0:4]
 X6 XOR Rd, Ra, Rb        Rd = Ra ^ Rb
-X7 TBS Rd, Ra, Rb        Rd = Ra & (1 << Rb) ? 1 : 0
+X7 TBS Rd, Ra, Rb        Rd = Ra & (1 << Rb)
 
-X8 SEQ Rd, Ra, Rb        Rd = Ra == Rb
-X9 SLT Rd, Ra, Rb        Rd = Ra < Rb
-XA SGT Rd, Ra, Rb        Rd = Ra > Rb
-XB MOV Rd, Ra            Rd = Ra
-XC BIS Rd, Ra, Rb        Rd = Ra | (1 << Rb)
-XD BIC Rd, Ra, Rb        Rd = Ra & ~(1 << Rb)
-XE MLO Rd, Rb            Rd = signextend(Rb[15:0])
-XF MHI Rd, Ra, Rb        Rd = (Ra & 0xFFFF) | (Rb << 16)
+X8 BIS Rd, Ra, Rb        Rd = Ra | (1 << Rb)
+X9 BIC Rd, Ra, Rb        Rd = Ra & ~(1 << Rb)
+XA SLT Rd, Ra, Rb        Rd = Ra < Rb
+XB SGT Rd, Ra, Rb        Rd = Ra > Rb
+XC MLO Rd, Ra, Rb        Rd = (Ra & 0xFFFF0000) | (Rb & 0xFFFF)
+XD MHI Rd, Ra, Rb        Rd = (Ra & 0xFFFF) | (Rb << 16)
+XE ASR Rd, Ra, Rb        Rd = (Ra >>> Rb[0:4])
+XF MUL Rd, Ra, Rb        Rd = Ra * Rb
+
+Pseudo Instructions
+-------------------
+
+MOV Rd, Rb               OR Rd, R0, Rb
+SNE Rd, Ra, Rb           SUB Rd, Ra, Rb
+NOT Rd, Ra               XOR Rd, Ra, #-1
+
+Registers
+---------
+R0-R3 args / results
+R13 stack pointer (aka SP)
+R14 link (aka LR)
+R15 zero (aka ZR)
 
 Open Issues
 -----------
-- should ALU IMM16 be signed?
-- figure out func field coding for variant LW/SW instructions
 - syntax for conditional branches is confusing
 - consider allowing B [Rx] as well as B Rx?
 - allow # in front of constants

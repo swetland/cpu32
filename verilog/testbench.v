@@ -10,29 +10,21 @@ reg clk, reset;
 wire [31:0] romaddr, romdata, ramaddr, ramrdata, ramwdata;
 wire ramwe;
 
-initial
-	begin
-		reset = 0;
-		#15
-		reset = 1;
-		#20
-		reset = 0;
+initial begin
+	clk = 0;
+	reset = 0;
+//	#1 reset = 1;
+//	#4 reset = 0;
 	end
 
 always
-	begin
-		clk = 0;
-		#10 ;
-		clk = 1;
-		#10 ;
-	end
+	#10 clk = ~clk;
 
 wire [7:0] urdata;
 
 cpu32 cpu(
 	.clk(clk),
-	.reset(0),
-//	.reset(reset),
+	.reset(reset),
 	.i_addr(romaddr),
 	.i_data(romdata),
 	.d_data_r(ramrdata),
@@ -80,7 +72,7 @@ initial begin
 	$dumpvars(0,testbench);
 end
 
-initial #1000 $finish;
+initial #10000 $finish;
 
 
 always @(posedge clk) begin
@@ -92,13 +84,16 @@ always @(posedge clk) begin
 		$display("PC> ERROR");
 		$finish();
 	end
-	$display("PC> %h I> %h  R> %h %h %h %h %h",
+	$display("PC> %h I> %h  R> %h %h %h %h %h %h %h %h",
 		cpu.pc, cpu.ir,
 		cpu.REGS.R[0],
 		cpu.REGS.R[1],
 		cpu.REGS.R[2],
-		cpu.REGS.R[14],
-		cpu.REGS.R[15]
+		cpu.REGS.R[3],
+		cpu.REGS.R[11],
+		cpu.REGS.R[12],
+		cpu.REGS.R[13],
+		cpu.REGS.R[14]
 		);
 end
 
