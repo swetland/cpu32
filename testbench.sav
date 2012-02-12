@@ -1,37 +1,57 @@
 [timestart] 0
-[size] 1248 600
+[size] 1260 725
 [pos] -1 -1
-*-6.007232 37 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-5.861536 147 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] testbench.
 [treeopen] testbench.cpu.
 @28
-testbench.clk
+testbench.cpu.clk
+@800200
+-F/D/E
 @22
 testbench.cpu.pc[31:0]
 testbench.cpu.ir[31:0]
 @28
-testbench.cpu.ctl_ram_rd
+testbench.cpu.ctl_ram_we
 testbench.cpu.ctl_regs_we
-testbench.cpu.ctl_branch
-@800200
--ALU
+testbench.cpu.ctl_wdata_ram
 @22
-testbench.cpu.alu.left[31:0]
-testbench.cpu.alu.right[31:0]
-testbench.cpu.alu.out[31:0]
+testbench.cpu.result[31:0]
+@29
+testbench.cpu.hazard_rrw
 @1000200
--ALU
+-F/D/E
 @800200
--MEMORY
+-MEM
 @22
-testbench.cpu.d_addr[31:0]
-testbench.cpu.d_data_r[31:0]
-testbench.cpu.d_data_w[31:0]
+testbench.cpu.mem.regs_wsel[3:0]
 @28
-testbench.cpu.d_we
+testbench.cpu.mem.regs_we
+testbench.cpu.mem.mem_we
+testbench.cpu.mem.wdata_ram
 @1000200
--MEMORY
-@23
-testbench.cpu.REGS.wdata[31:0]
+-MEM
+@800200
+-WB
+@28
+testbench.cpu.mem.in_wdata_ram
+@22
+testbench.cpu.wb.data[31:0]
+@28
+testbench.cpu.wb.we
+@22
+testbench.cpu.wb.wsel[3:0]
+@1000200
+-WB
+@800200
+-RAM
+@22
+testbench.ram.addr[7:0]
+testbench.ram.rdata[31:0]
+testbench.ram.wdata[31:0]
+@28
+testbench.ram.we
+@1000200
+-RAM
 [pattern_trace] 1
 [pattern_trace] 0

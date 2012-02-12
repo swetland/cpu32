@@ -31,7 +31,7 @@ cpu32 cpu(
 //	.d_data_r({24'b0,urdata}),
 	.d_data_w(ramwdata),
 	.d_addr(ramaddr),
-	.d_we(ramwe)
+	.d_data_we(ramwe)
 	);
 
 rom #(32,8) rom(
@@ -39,7 +39,7 @@ rom #(32,8) rom(
 	.data(romdata)
 	);
 
-ram #(32,8) ram(
+syncram #(32,8) ram(
 	.clk(clk),
 	.addr(ramaddr[9:2]),
 	.rdata(ramrdata),
@@ -72,7 +72,7 @@ initial begin
 	$dumpvars(0,testbench);
 end
 
-initial #10000 $finish;
+initial #1000 $finish;
 
 
 always @(posedge clk) begin

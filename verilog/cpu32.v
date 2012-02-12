@@ -12,7 +12,7 @@ module cpu32 (
 	output [31:0] d_addr,
 	output [31:0] d_data_w,
 	input [31:0] d_data_r,
-	output d_we
+	output d_data_we
 	);
 
 wire [31:0] ir, pc;
@@ -23,7 +23,6 @@ wire [3:0] opcode, opfunc, opsela, opselb, opseld;
 wire [15:0] opimm16;
 
 wire [31:0] adata, bdata, wdata, result;
-wire [3:0] alu_wsel;
 
 assign opcode = ir[31:28];
 assign opfunc = ir[27:24];
@@ -40,7 +39,7 @@ wire ctl_alu_imm;
 wire ctl_regs_we;
 wire ctl_ram_we;
 wire ctl_alu_altdest;
-wire [1:0] ctl_wdata_src;
+wire ctl_wdata_ram;
 wire ctl_branch_ind;
 wire ctl_branch_taken;
 
@@ -54,7 +53,7 @@ control control(
 	.ctl_regs_we(ctl_regs_we),
 	.ctl_ram_we(ctl_ram_we),
 	.ctl_alu_altdest(ctl_alu_altdest),
-	.ctl_wdata_src(ctl_wdata_src),
+	.ctl_wdata_ram(ctl_wdata_ram),
 
 	.ctl_branch_ind(ctl_branch_ind),
 	.ctl_branch_taken(ctl_branch_taken)
@@ -71,23 +70,27 @@ register #(32) PC (
 	.dout(pc)
 	);
 
+/* these arrive from writeback */
+wire [31:0] regs_wdata;
+wire [3:0] regs_wsel;
+wire regs_we;
+
 regfile REGS (
 	.reset(reset),
 	.clk(clk),
-	.we(ctl_regs_we),
-	.wsel(alu_wsel), .wdata(wdata),
+	.we(regs_we),
+	.wsel(regs_wsel), .wdata(regs_wdata),
 	.asel(opsela), .adata(adata),
 	.bsel(opselb), .bdata(bdata)
 	);
 
-mux4 #(32) mux_wdata_src(
-	.sel(ctl_wdata_src),
-	.in0(result),
-	.in1(d_data_r),
-	.in2(pc_plus_4),
-	.in3(32'b0),
-	.out(wdata)
-	);
+// attempt to identify hazards
+wire hazard_rrw;
+assign hazard_rrw = (((regs_wsel == opsela) | (regs_wsel == opselb)) & regs_we);
+
+assign i_addr = pc;
+assign ir = i_data;
+//assign ir = (hazard_rrw ? 32'hEEEEEEEE : i_data);
 
 assign pc_plus_4 = (pc + 32'h4);
 
@@ -106,9 +109,6 @@ mux2 #(32) mux_pc_source(
 	.out(next_pc)
 	);
 
-assign i_addr = pc;
-assign ir = i_data;
-
 wire [31:0] ainput;
 wire [31:0] binput;
 
@@ -126,11 +126,13 @@ mux2 #(32) mux_alu_right(
 	.out(binput)
 	);
 
+wire [3:0] ctl_wsel;
+
 mux2 #(4) alu_wsel_mux(
 	.sel(ctl_alu_altdest),
 	.in0(opseld),
 	.in1(opselb),
-	.out(alu_wsel)
+	.out(ctl_wsel)
 	);
 
 alu alu(
@@ -140,9 +142,126 @@ alu alu(
 	.out(result)
 	);
 
-// SW operation always writes Rb (aka Rd)
-assign d_addr = result;
-assign d_data_w = bdata;
-assign d_we = ctl_ram_we;
+wire [31:0] mem_data;
+wire [3:0] mem_wsel;
+wire mem_we;
+
+memory mem(
+	.clk(clk),
+
+	.in_alu_data(result),
+	.in_reg_data(bdata),
+
+	.in_mem_we(ctl_ram_we),
+	.in_regs_we(ctl_regs_we),
+	.in_regs_wsel(ctl_wsel),
+	.in_wdata_ram(ctl_wdata_ram),
+
+	.out_data(mem_data),
+	.out_wsel(mem_wsel),
+	.out_we(mem_we),
+
+	.d_addr(d_addr),
+	.d_data_r(d_data_r),
+	.d_data_w(d_data_w),
+	.d_data_we(d_data_we)
+	);
+
+writeback wb(
+	.clk(clk),
+
+	.in_data(mem_data),
+	.in_wsel(mem_wsel),
+	.in_we(mem_we),
+
+	.out_we(regs_we),
+	.out_wsel(regs_wsel),
+	.out_data(regs_wdata)
+	);
 
 endmodule
+
+
+module memory(
+	input clk,
+
+	/* interface to sync sram */
+	output [31:0] d_addr,
+	input  [31:0] d_data_r,
+	output [31:0] d_data_w,
+	output d_data_we,
+
+	/* interface to processor core */
+	input [31:0] in_alu_data,
+	input [31:0] in_reg_data,
+
+	input in_mem_we,
+	input in_regs_we,
+	input [3:0] in_regs_wsel,
+	input in_wdata_ram,
+
+	output [31:0] out_data,
+	output [3:0] out_wsel,
+	output out_we
+	);
+
+	reg [31:0] alu_data;
+	reg [31:0] reg_data;
+	reg mem_we;
+	reg regs_we;
+	reg [3:0] regs_wsel;
+	reg wdata_ram;
+
+	always @(posedge clk) begin
+		alu_data <= in_alu_data;
+		reg_data <= in_reg_data;
+		mem_we <= in_mem_we;
+		regs_we <= in_regs_we;
+		regs_wsel <= in_regs_wsel;
+		wdata_ram <= in_wdata_ram;
+	end
+
+	assign d_addr = in_alu_data; 
+	assign d_data_w = in_reg_data;
+	assign d_data_we = in_mem_we;
+
+	mux2 #(32) mux_data(
+		.sel(wdata_ram),
+		.in0(alu_data),
+		.in1(d_data_r),
+		.out(out_data)
+		);
+
+	assign out_wsel = regs_wsel;
+	assign out_we = regs_we;
+endmodule
+
+module writeback(
+	input clk,
+
+	input [31:0] in_data,
+	input [3:0] in_wsel,
+	input in_we,
+
+	output out_we,
+	output [3:0] out_wsel,
+	output [31:0] out_data
+	);
+
+	reg [31:0] data;
+	reg [3:0] wsel;
+	reg we;
+
+	always @(posedge clk) begin
+		data <= in_data;
+		wsel <= in_wsel;
+		we <= in_we;
+	end
+
+	assign out_we = we;
+	assign out_wsel = wsel;
+	assign out_data = data;
+endmodule
+
+	
+	

@@ -21,6 +21,11 @@ Core Instruction Set
 50 BLZ Rd, Ra, Rb        if (Ra == 0) { Rd = PC + 4, PC = Rb }
 58 BLNZ Rd, Ra, Rb       if (Ra != 0) { Rd = PC + 4, PC = Rb }
 
+4F BLZ Rd, Ra, rel       if (Ra == 0) { Rd = PC + 4, PC += I }
+5F BLNZ Rd, Ra, rel      if (Ra != 0) { Rd = PC + 4, PC += I }
+6F BLZ Rd, Ra, Rb        if (Ra == 0) { Rd = PC + 4, PC = Rb }
+7F BLNZ Rd, Ra, Rb       if (Ra != 0) { Rd = PC + 4, PC = Rb }
+
 Extended Instruction Set (tbd)
 ------------------------
 
@@ -50,7 +55,7 @@ XB SGT Rd, Ra, Rb        Rd = Ra > Rb
 XC MLO Rd, Ra, Rb        Rd = (Ra & 0xFFFF0000) | (Rb & 0xFFFF)
 XD MHI Rd, Ra, Rb        Rd = (Ra & 0xFFFF) | (Rb << 16)
 XE ASR Rd, Ra, Rb        Rd = (Ra >>> Rb[0:4])
-XF MUL Rd, Ra, Rb        Rd = Ra * Rb
+XF NOP Rd, Ra, Rb        Rd = Ra
 
 Pseudo Instructions
 -------------------
@@ -58,6 +63,7 @@ Pseudo Instructions
 MOV Rd, Rb               OR Rd, R0, Rb
 SNE Rd, Ra, Rb           SUB Rd, Ra, Rb
 NOT Rd, Ra               XOR Rd, Ra, #-1
+NOP                      BLNZ Rz, Rz, 0xFFFF  (0x5FFFFFFF)
 
 Registers
 ---------

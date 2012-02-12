@@ -435,6 +435,7 @@ struct {
 	const char *fmt;
 } decode[] = {
 	{ 0xFFFFFFFF, 0x00000000, "NOP", },
+	{ 0xFFFFFFFF, 0xEEEEEEEE, "NOP", },
 	{ 0xFFFFFFFF, 0xFFFFFFFF, "HALT", },
 	{ 0xFFF00000, 0x10F00000, "MOV @B, #@s", }, // ORR Rd, Rz, #I 
 	{ 0xFFF00000, 0x1CF00000, "MLO @B, #0x@u", }, // MLO Rd, Rz, #I 
@@ -446,18 +447,18 @@ struct {
 	{ 0xFF000000, 0x22000000, "LW @B, [@A, #@s]", },
 	{ 0xFF00FFFF, 0x32000000, "SW @B, [@A]", },
 	{ 0xFF000000, 0x32000000, "SW @B, [@A, #@s]", },
-	{ 0xFFFF0000, 0x40FF0000, "B @r", },
-	{ 0xFFFF0000, 0x40FE0000, "BL @r", },
-	{ 0xFF0F0000, 0x400F0000, "BZ @A, @r", },
-	{ 0xFF0F0000, 0x400E0000, "BLZ @A, @r", },
-	{ 0xFFF0F000, 0x50F0F000, "B @B", },
-	{ 0xFFF0F000, 0x50F0E000, "BL @B", },
-	{ 0xFF00F000, 0x5000F000, "BZ @A, @B", },
-	{ 0xFF00F000, 0x5000E000, "BLZ @A, @B", },
-	{ 0xFF0F0000, 0x480F0000, "BNZ @A, @r", },
-	{ 0xFF0F0000, 0x480E0000, "BLNZ @A, @r", },
-	{ 0xFF00F000, 0x5800F000, "BNZ @A, @B", },
-	{ 0xFF00F000, 0x5800E000, "BLNZ @A, @B", },
+	{ 0xFFFF0000, 0x4FFF0000, "B @r", },
+	{ 0xFFFF0000, 0x4FFE0000, "BL @r", },
+	{ 0xFF0F0000, 0x4F0F0000, "BZ @A, @r", },
+	{ 0xFF0F0000, 0x4F0E0000, "BLZ @A, @r", },
+	{ 0xFFF0F000, 0x6FF0F000, "B @B", },
+	{ 0xFFF0F000, 0x6FF0E000, "BL @B", },
+	{ 0xFF00F000, 0x6F00F000, "BZ @A, @B", },
+	{ 0xFF00F000, 0x6F00E000, "BLZ @A, @B", },
+	{ 0xFF0F0000, 0x5F0F0000, "BNZ @A, @r", },
+	{ 0xFF0F0000, 0x5F0E0000, "BLNZ @A, @r", },
+	{ 0xFF00F000, 0x7F00F000, "BNZ @A, @B", },
+	{ 0xFF00F000, 0x7F00E000, "BLNZ @A, @B", },
 	{ 0x00000000, 0x00000000, "UNDEFINED", },
 };
 
@@ -497,11 +498,17 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 			/* blank lines are fine */
 		return;
 	case tNOP:
-		emit(0x00000000);
+		emit(0xEEEEEEEE);
 		return;
 	case tMOV:
 		expect_register(tok[1]);
 		expect(tCOMMA,tok[2]);
+		if (is_register(tok[3])) {
+			/* MOV A,B -> ORR A, B, B */
+			tmp = to_register(tok[3]);	
+			emit(TO_D(to_register(tok[1])) | TO_A(tmp) | TO_B(tmp));
+			return;
+		}
 		expect(tNUMBER,tok[3]);
 		if (num[3] == 0xFFFF) {
 			/* special case, need to use MLO */
@@ -535,13 +542,13 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 			tmp = 14;
 		}
 		if (is_register(tok[1])) {
-			emit(0x50F00000 | TO_D(tmp) | TO_B(to_register(tok[1])));
+			emit(0x6FF00000 | TO_D(tmp) | TO_B(to_register(tok[1])));
 		} else if (tok[1] == tSTRING) {
-			emit(0x40F00000 | TO_B(tmp));
+			emit(0x4FF00000 | TO_B(tmp));
 			uselabel(str[1], PC - 1, 16);
 		} else if ((tok[1] == tNUMBER) || (tok[1] == tDOT)) {
 			if (!is_signed_16(num[1])) die("branch target out of range");
-			emit(0x40F00000 | TO_B(tmp) | TO_I16(num[1]));
+			emit(0x4FF00000 | TO_B(tmp) | TO_I16(num[1]));
 		} else {
 			die("expected branch target, got %s", tnames[tok[1]]);
 		}
@@ -551,16 +558,16 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 	case tBLNZ:
 	case tBLZ:
 		switch (tok[0]) {
-		case tBZ:   instr = 0x40000000; tmp = 15; break;
-		case tBNZ:  instr = 0x48000000; tmp = 15; break;
-		case tBLZ:  instr = 0x40000000; tmp = 14; break;
-		case tBLNZ: instr = 0x48000000; tmp = 14; break;
+		case tBZ:   instr = 0x4F000000; tmp = 15; break;
+		case tBNZ:  instr = 0x5F000000; tmp = 15; break;
+		case tBLZ:  instr = 0x4F000000; tmp = 14; break;
+		case tBLNZ: instr = 0x5F000000; tmp = 14; break;
 		}
 		expect_register(tok[1]);
 		expect(tCOMMA,tok[2]);
 		instr |= TO_A(to_register(tok[1]));
 		if (is_register(tok[3])) {
-			emit(instr | 0x10000000 | TO_D(tmp) | TO_B(to_register(tok[3])));
+			emit(instr | 0x20000000 | TO_D(tmp) | TO_B(to_register(tok[3])));
 		} else if (tok[3] == tSTRING) {
 			emit(instr | TO_B(tmp));
 			uselabel(str[3], PC - 1, 16);

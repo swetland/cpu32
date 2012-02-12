@@ -45,7 +45,7 @@ cpu32 cpu(
 	.d_data_r(cpurdata),
 	.d_data_w(ramwdata),
 	.d_addr(ramaddr),
-	.d_we(ramwe)
+	.d_data_we(ramwe)
 	);
 
 // ugly hack for now

@@ -31,6 +31,6 @@ always @ (*)
 	4'b1100: out <= { left[31:16], right[15:0] };
 	4'b1101: out <= { right[15:0], left[31:16] };
 	4'b1110: out <= (left >>> right[4:0]);
-	4'b1111: out <= (left * right); 
+	4'b1111: out <= left;
 	endcase
 endmodule
