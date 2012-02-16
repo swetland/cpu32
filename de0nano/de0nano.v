@@ -27,7 +27,7 @@ module de0nano(
 wire clk, reset;
 wire [31:0] romaddr, romdata, ramaddr, ramrdata, ramwdata;
 wire [31:0] uartrdata;
-wire cpurdata;
+wire [31:0] cpurdata;
 wire ramwe;
 wire cs0,cs1;
 
