@@ -14,7 +14,7 @@ else
 	exit 1
 fi
 
-grep '^PC> ' $1.out > $1.trace
+grep '^PC> ' $1.out | grep -v HAZARD > $1.trace
 
 if [ ! -f $1.gold ] ; then
 	cp $1.trace $1.gold

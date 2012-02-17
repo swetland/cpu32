@@ -47,6 +47,7 @@ control control(
 	.opcode(opcode),
 	.opfunc(opfunc),
 	.ctl_adata_zero(ctl_adata_zero),
+	.hazard(hazard_rrw),
 
 	.ctl_alu_pc(ctl_alu_pc),
 	.ctl_alu_imm(ctl_alu_imm),
@@ -65,7 +66,7 @@ assign ctl_adata_zero = (adata == 32'h0);
 register #(32) PC (
 	.clk(clk),
 	.reset(reset),
-	.en(1),
+	.en(!hazard_rrw),
 	.din(next_pc),
 	.dout(pc)
 	);
@@ -85,12 +86,13 @@ regfile REGS (
 	);
 
 // attempt to identify hazards
-wire hazard_rrw;
-assign hazard_rrw = (((regs_wsel == opsela) | (regs_wsel == opselb)) & regs_we);
+wire hazard1, hazard2, hazard_rrw;
+assign hazard1 = (((regs_wsel == opsela) | (regs_wsel == opselb)) & regs_we);
+assign hazard2 = (((mem_wsel == opsela) | (mem_wsel == opselb)) & mem_we);
+assign hazard_rrw = hazard1 | hazard2;
 
 assign i_addr = pc;
 assign ir = i_data;
-//assign ir = (hazard_rrw ? 32'hEEEEEEEE : i_data);
 
 assign pc_plus_4 = (pc + 32'h4);
 
@@ -148,6 +150,7 @@ wire mem_we;
 
 memory mem(
 	.clk(clk),
+	.reset(reset),
 
 	.in_alu_data(result),
 	.in_reg_data(bdata),
@@ -169,6 +172,7 @@ memory mem(
 
 writeback wb(
 	.clk(clk),
+	.reset(reset),
 
 	.in_data(mem_data),
 	.in_wsel(mem_wsel),
@@ -184,6 +188,7 @@ endmodule
 
 module memory(
 	input clk,
+	input reset,
 
 	/* interface to sync sram */
 	output [31:0] d_addr,
@@ -213,12 +218,21 @@ module memory(
 	reg wdata_ram;
 
 	always @(posedge clk) begin
-		alu_data <= in_alu_data;
-		reg_data <= in_reg_data;
-		mem_we <= in_mem_we;
-		regs_we <= in_regs_we;
-		regs_wsel <= in_regs_wsel;
-		wdata_ram <= in_wdata_ram;
+		if (reset) begin
+			alu_data <= 32'b0;
+			reg_data <= 32'b0;
+			mem_we <= 1'b0;
+			regs_we <= 1'b0;
+			regs_wsel <= 4'b0;
+			wdata_ram <= 1'b0;
+		end else begin
+			alu_data <= in_alu_data;
+			reg_data <= in_reg_data;
+			mem_we <= in_mem_we;
+			regs_we <= in_regs_we;
+			regs_wsel <= in_regs_wsel;
+			wdata_ram <= in_wdata_ram;
+		end
 	end
 
 	assign d_addr = in_alu_data; 
@@ -238,6 +252,7 @@ endmodule
 
 module writeback(
 	input clk,
+	input reset,
 
 	input [31:0] in_data,
 	input [3:0] in_wsel,
@@ -253,9 +268,15 @@ module writeback(
 	reg we;
 
 	always @(posedge clk) begin
-		data <= in_data;
-		wsel <= in_wsel;
-		we <= in_we;
+		if (reset) begin
+			data <= 32'b0;
+			wsel <= 4'b0;
+			we <= 1'b0;
+		end else begin
+			data <= in_data;
+			wsel <= in_wsel;
+			we <= in_we;
+		end
 	end
 
 	assign out_we = we;

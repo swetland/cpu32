@@ -13,8 +13,8 @@ wire ramwe;
 initial begin
 	clk = 0;
 	reset = 0;
-//	#1 reset = 1;
-//	#4 reset = 0;
+	#1 reset = 1;
+	#19 reset = 0;
 	end
 
 always
@@ -84,6 +84,9 @@ always @(posedge clk) begin
 		$display("PC> ERROR");
 		$finish();
 	end
+	if (cpu.hazard_rrw)
+		$display("PC> %h I> HAZARD", cpu.pc);
+	else if (!reset)
 	$display("PC> %h I> %h  R> %h %h %h %h %h %h %h %h",
 		cpu.pc, cpu.ir,
 		cpu.REGS.R[0],

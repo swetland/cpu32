@@ -5,6 +5,7 @@ module control (
 	input [3:0] opcode,
 	input [3:0] opfunc,
 	input ctl_adata_zero,		// 1=(adata==0)
+	input hazard,
 
 	output ctl_alu_pc,		// 0=adata, 1=pc+4 -> alu.left
 	output ctl_alu_imm,		// 0=bdata, 1=signed_imm16
@@ -22,7 +23,7 @@ wire ctl_branch_nz;
 
 reg [6:0] control;
 
-always @ (*)
+always @ (*) begin
 	case (opcode)
 	4'b0000: control = 7'b0010000; // ALU Rd, Ra, Rb
 	4'b0001: control = 7'b0110100; // ALU Rd, Ra, #I
@@ -35,6 +36,9 @@ always @ (*)
 	4'b1110: control = 7'b1100000; // NOP
 	default: control = 7'b0000000;
 	endcase
+
+	if (hazard) control = 7'b1100000;
+end
 
 assign {
 	ctl_alu_pc, ctl_alu_imm, ctl_regs_we, ctl_ram_we, 
