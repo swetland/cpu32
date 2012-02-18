@@ -638,7 +638,7 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 		if (is_register(tok[5])) {
 			emit(instr | TO_B(to_register(tok[5])) | TO_D(to_register(tok[1])));
 		} else if (tok[5] == tNUMBER) {
-			if (num[5] > 65535) die("immediate too large");
+			if ((num[5] > 65535) && ((num[5] & 0xFFFF8000) != 0xFFFF8000)) die("immediate too large");
 			emit(instr | 0x10000000 | TO_B(to_register(tok[1])) | TO_I16(num[5]));
 		} else {
 			die("expected register or #, got %s", tnames[tok[5]]);
