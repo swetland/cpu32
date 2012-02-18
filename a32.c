@@ -56,7 +56,7 @@ struct fixup *fixups;
 void fixup_branch(const char *name, int addr, int btarget, int type) {
 	unsigned n;
 
-	n = btarget - addr;
+	n = btarget - addr - 1;
 
 	if (!is_signed_16(n)) {
 		die("label '%s' at %08x is out of range of %08x\n",
@@ -418,7 +418,7 @@ void printinst(char *buf, unsigned pc, unsigned instr, const char *fmt) {
 			break;
 		case 'r':
 			buf = append(buf,"0x");
-			buf = append_u32(buf,(pc + s16));
+			buf = append_u32(buf,(pc + 4 + s16));
 			break;
 		case 0:
 			goto done;

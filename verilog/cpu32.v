@@ -15,9 +15,18 @@ module cpu32 (
 	output d_data_we
 	);
 
-wire [31:0] ir, pc;
+reg sync_reset;
 
-wire [31:0] next_pc, pc_plus_4;
+always @(posedge clk)
+	if (reset)
+		sync_reset <= 1'b1;
+	else
+		sync_reset <= 1'b0;
+
+wire [31:0] pc;
+reg [31:0] ir;
+
+wire [31:0] next_pc, pc_plus_4, next_pc0;
 
 wire [3:0] opcode, opfunc, opsela, opselb, opseld;
 wire [15:0] opimm16;
@@ -65,11 +74,21 @@ assign ctl_adata_zero = (adata == 32'h0);
 
 register #(32) PC (
 	.clk(clk),
-	.reset(reset),
-	.en(!hazard_rrw),
+	.reset(sync_reset),
+	.en(1), 
 	.din(next_pc),
 	.dout(pc)
 	);
+
+assign i_addr = next_pc;
+
+always @(posedge clk)
+	if (sync_reset) begin
+		ir <= 32'hEEEE7777;
+	end else begin
+		if (!hazard_rrw)
+			ir <= i_data;
+	end
 
 /* these arrive from writeback */
 wire [31:0] regs_wdata;
@@ -91,10 +110,7 @@ assign hazard1 = (((regs_wsel == opsela) | (regs_wsel == opselb)) & regs_we) & (
 assign hazard2 = (((mem_wsel == opsela) | (mem_wsel == opselb)) & mem_we) & (mem_wsel != 4'b1111);
 assign hazard_rrw = hazard1 | hazard2;
 
-assign i_addr = pc;
-assign ir = i_data;
-
-assign pc_plus_4 = (pc + 32'h4);
+assign pc_plus_4 = hazard_rrw ? pc : (pc + 32'h4);
 
 wire [31:0] branch_to;
 mux2 #(32) mux_branch_to(
@@ -108,6 +124,13 @@ mux2 #(32) mux_pc_source(
 	.sel(ctl_branch_taken),
 	.in0(pc_plus_4),
 	.in1(branch_to),
+	.out(next_pc0)
+	);
+
+mux2 #(32) mux_next_pc(
+	.sel(sync_reset),
+	.in0(next_pc0),
+	.in1(32'h0),
 	.out(next_pc)
 	);
 

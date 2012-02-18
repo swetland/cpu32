@@ -34,19 +34,21 @@ cpu32 cpu(
 	.d_data_we(ramwe)
 	);
 
-rom #(32,8) rom(
-	.addr(romaddr[9:2]),
-	.data(romdata)
-	);
-
-syncram #(32,8) ram(
+dualsyncram #(32,12) memory(
 	.clk(clk),
-	.addr(ramaddr[9:2]),
-	.rdata(ramrdata),
-	.wdata(ramwdata),
-	.we(ramwe)
+	.a_raddr(romaddr[13:2]),
+	.a_rdata(romdata),
+	.a_waddr(12'b0),
+	.a_wdata(32'b0),
+	.a_we(1'b0),
+	.b_raddr(ramaddr[13:2]),
+	.b_rdata(ramrdata),
+	.b_waddr(ramaddr[13:2]),
+	.b_wdata(ramwdata),
+	.b_we(ramwe)
 	);
 
+initial $readmemh("test.hex",memory.mem);
 
 /*
 wire tx;
