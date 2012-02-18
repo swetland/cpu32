@@ -20,7 +20,7 @@ reg [DWIDTH-1:0] mem[0:2**AWIDTH-1];
 
 always @(posedge clk) begin
 	if (a_we)
-		mem[a_waddr] <= b_wdata;
+		mem[a_waddr] <= a_wdata;
 	if (b_we)
 		mem[b_waddr] <= b_wdata;
 	a_rdata <= mem[a_raddr];
