@@ -23,8 +23,7 @@ always @(posedge clk)
 	else
 		sync_reset <= 1'b0;
 
-wire [31:0] pc;
-reg [31:0] ir;
+reg [31:0] pc, ir;
 
 wire [31:0] next_pc, pc_plus_4, next_pc0;
 
@@ -72,22 +71,16 @@ control control(
 wire ctl_adata_zero;
 assign ctl_adata_zero = (adata == 32'h0);
 
-register #(32) PC (
-	.clk(clk),
-	.reset(sync_reset),
-	.en(1), 
-	.din(next_pc),
-	.dout(pc)
-	);
-
 assign i_addr = next_pc;
 
 always @(posedge clk)
 	if (sync_reset) begin
 		ir <= 32'hEEEE7777;
+		pc <= 32'h00000000;
 	end else begin
 		if (!hazard_rrw)
 			ir <= i_data;
+		pc <= next_pc;
 	end
 
 /* these arrive from writeback */
