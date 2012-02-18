@@ -36,14 +36,12 @@ cpu32 cpu(
 
 dualsyncram #(32,12) memory(
 	.clk(clk),
-	.a_raddr(romaddr[13:2]),
+	.a_addr(romaddr[13:2]),
 	.a_rdata(romdata),
-	.a_waddr(12'b0),
 	.a_wdata(32'b0),
 	.a_we(1'b0),
-	.b_raddr(ramaddr[13:2]),
+	.b_addr(ramaddr[13:2]),
 	.b_rdata(ramrdata),
-	.b_waddr(ramaddr[13:2]),
 	.b_wdata(ramwdata),
 	.b_we(ramwe)
 	);
