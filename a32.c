@@ -546,9 +546,8 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 		} else if (tok[1] == tSTRING) {
 			emit(0x4FF00000 | TO_B(tmp));
 			uselabel(str[1], PC - 1, 16);
-		} else if ((tok[1] == tNUMBER) || (tok[1] == tDOT)) {
-			if (!is_signed_16(num[1])) die("branch target out of range");
-			emit(0x4FF00000 | TO_B(tmp) | TO_I16(num[1]));
+		} else if (tok[1] == tDOT) {
+			emit(0x4FF00000 | TO_B(tmp) | TO_I16(-1));
 		} else {
 			die("expected branch target, got %s", tnames[tok[1]]);
 		}
@@ -571,9 +570,8 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 		} else if (tok[3] == tSTRING) {
 			emit(instr | TO_B(tmp));
 			uselabel(str[3], PC - 1, 16);
-		} else if ((tok[3] == tNUMBER) || (tok[3] == tDOT)) {
-			if (!is_signed_16(num[3])) die("branch target out of range");
-			emit(instr | TO_I16(num[3]));
+		} else if (tok[3] == tDOT) {
+			emit(instr | TO_I16(-1));
 		} else {
 			die("expected branch target, got %s", tnames[tok[1]]);
 		}
