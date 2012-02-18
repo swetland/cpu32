@@ -87,8 +87,8 @@ regfile REGS (
 
 // attempt to identify hazards
 wire hazard1, hazard2, hazard_rrw;
-assign hazard1 = (((regs_wsel == opsela) | (regs_wsel == opselb)) & regs_we);
-assign hazard2 = (((mem_wsel == opsela) | (mem_wsel == opselb)) & mem_we);
+assign hazard1 = (((regs_wsel == opsela) | (regs_wsel == opselb)) & regs_we) & (regs_wsel != 4'b1111);
+assign hazard2 = (((mem_wsel == opsela) | (mem_wsel == opselb)) & mem_we) & (mem_wsel != 4'b1111);
 assign hazard_rrw = hazard1 | hazard2;
 
 assign i_addr = pc;
