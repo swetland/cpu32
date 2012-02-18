@@ -22,7 +22,7 @@ wire [15:0] status;
 reg [31:0] count;
 
 assign LEDG = 10'b1111111111;
-assign HEX0_DP = 1'b1;
+assign HEX0_DP = ~reset;
 assign HEX1_DP = 1'b1;
 assign HEX2_DP = 1'b1;
 assign HEX3_DP = 1'b1;
@@ -32,7 +32,7 @@ hex2seven hex1(.in(status[7:4]),.out(HEX1_D));
 hex2seven hex2(.in(status[11:8]),.out(HEX2_D));
 hex2seven hex3(.in(status[15:12]),.out(HEX3_D));
 
-wire clk;
+wire clk, reset;
 assign clk = CLOCK_50;
 
 reg clk25;
@@ -48,6 +48,9 @@ wire [11:0] pixel;
 wire [10:0] vram_addr;
 wire [7:0] vram_data;
 wire [7:0] line;
+
+wire [31:0] jtag_addr, jtag_data;
+wire jtag_we;
 
 vga vga(
 	.clk(clk25),
@@ -89,28 +92,35 @@ videoram #(8,11) vram(
 	.waddr(d_addr[13:2]),
 	);
 
-rom rom(
-	.addr(romaddr[9:2]),
-	.data(romdata)
-	);
-
-syncram #(32,8) ram(
+dualsyncram #(32,12) memory(
 	.clk(clk),
-	.addr(d_addr[9:2]),
-	.rdata(d_data_r),
-	.wdata(d_data_w),
-	.we(d_we && (d_addr[31:10] == 21'b0))
+	.a_addr(jtag_we ? jtag_addr[13:2] : romaddr[13:2]),
+	.a_rdata(romdata),
+	.a_wdata(jtag_data),
+	.a_we(jtag_we),
+	.b_addr(d_addr[13:2]),
+	.b_rdata(d_data_r),
+	.b_wdata(d_data_w),
+	.b_we(d_we && (d_addr[31:14] == 20'd0))
 	);
 
 cpu32 cpu(
 	.clk(clk),
-	.reset(1'b0),
+	.reset(reset),
 	.i_addr(romaddr),
 	.i_data(romdata),
 	.d_data_r(d_data_r),
 	.d_data_w(d_data_w),
 	.d_addr(d_addr),
 	.d_data_we(d_we)
+	);
+
+jtagloader loader(
+	.clk(clk),
+	.addr(jtag_addr),
+	.data(jtag_data),
+	.we(jtag_we),
+	.reset(reset)
 	);
 
 endmodule
@@ -140,13 +150,3 @@ always @(*) case (in)
 endcase
 
 endmodule
-
-module rom(
-	input [7:0] addr,
-	output [31:0] data
-	);
-reg [31:0] rom[0:2**7];
-initial $readmemh("fw.txt", rom);
-assign data = rom[addr];
-endmodule
-
