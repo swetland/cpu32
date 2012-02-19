@@ -16,25 +16,12 @@ Core Instruction Set
 22 LW Rd, [Ra, #I]       Rd = M(Ra + I)
 32 SW Rd, [Ra, #I]       M(Ra + I) = Rd
 
-40 BLZ Rd, Ra, rel       if (Ra == 0) { Rd = PC + 4, PC += I }
-48 BLNZ Rd, Ra, rel      if (Ra != 0) { Rd = PC + 4, PC += I }
-50 BLZ Rd, Ra, Rb        if (Ra == 0) { Rd = PC + 4, PC = Rb }
-58 BLNZ Rd, Ra, Rb       if (Ra != 0) { Rd = PC + 4, PC = Rb }
-
 4F BLZ Rd, Ra, rel       if (Ra == 0) { Rd = PC + 4, PC += I }
 5F BLNZ Rd, Ra, rel      if (Ra != 0) { Rd = PC + 4, PC += I }
 6F BLZ Rd, Ra, Rb        if (Ra == 0) { Rd = PC + 4, PC = Rb }
 7F BLNZ Rd, Ra, Rb       if (Ra != 0) { Rd = PC + 4, PC = Rb }
 
-Extended Instruction Set (tbd)
-------------------------
-
-52 LW Rd, [PC, #I]       Rd = M(PC + I)
-
-6X LB
-7X SB
-8X LH
-9X SH
+82 LW Rd, [PC, #I]       Rd = M(PC + 8 + I)
 
 ALU Instructions (replace Rb w/ #I for immediate form)
 ------------------------------------------------------

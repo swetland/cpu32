@@ -36,10 +36,13 @@ int is_signed_16(unsigned n) {
 unsigned rom[65535];
 unsigned PC = 0;
 
+#define TYPE_BRANCH_16	1
+#define TYPE_LW_PC_16	2
+
 struct fixup {
 	struct fixup *next;
 	unsigned pc;
-	unsigned type;  // 16, 24
+	unsigned type;
 };
 
 struct label {
@@ -56,7 +59,16 @@ struct fixup *fixups;
 void fixup_branch(const char *name, int addr, int btarget, int type) {
 	unsigned n;
 
-	n = btarget - addr - 1;
+	switch(type) {
+	case TYPE_BRANCH_16:
+		n = btarget - addr - 1;
+		break;
+	case TYPE_LW_PC_16:
+		n = 4 * (btarget - addr - 2);
+		break;
+	default:
+		die("unknown branch type %d\n",type);
+	}
 
 	if (!is_signed_16(n)) {
 		die("label '%s' at %08x is out of range of %08x\n",
@@ -170,7 +182,7 @@ enum tokens {
 	tBIS, tBIC, tSLT, tSGT, tMLO, tMHI, tASR, tMUL,
 	tB, tBL, tBZ, tBNZ, tBLZ, tBLNZ, tLW, tSW,
 	tR0, tR1, tR2, tR3, tR4, tR5, tR6, tR7,
-	rR8, tR9, tR10, tR11, tR12, tSP, tLR, tZR,
+	rR8, tR9, tR10, tR11, tR12, tSP, tLR, tZR, tPC,
 	tNOP, tSNE, tNOT, tMOV,
 	tEQU, tWORD, tASCII, tASCIIZ,
 	NUMTOKENS,
@@ -185,7 +197,7 @@ char *tnames[] = {
 	"BIS", "BIC", "SLT", "SGT", "MLO", "MHI", "ASR", "MUL",
 	"B",   "BL",  "BZ",  "BNZ", "BLZ", "BLNZ", "LW", "SW",
 	"R0",  "R1",  "R2",  "R3",  "R4",  "R5",  "R6",  "R7",
-	"R8",  "R9",  "R10", "R11", "R12", "SP", "LR", "ZR",
+	"R8",  "R9",  "R10", "R11", "R12", "SP",  "LR",  "ZR", "PC",
 	"NOP", "SNE", "NOT", "MOV",
 	"EQU", "WORD", "STRING", "ASCIIZ"
 };
@@ -420,6 +432,10 @@ void printinst(char *buf, unsigned pc, unsigned instr, const char *fmt) {
 			buf = append(buf,"0x");
 			buf = append_u32(buf,(pc + 4 + s16));
 			break;
+		case 'l':
+			buf = append(buf,"0x");
+			buf = append_u32(buf,(pc + 8 + ((short)i16)));
+			break;
 		case 0:
 			goto done;
 		}
@@ -445,6 +461,8 @@ struct {
 	{ 0xF0000000, 0x10000000, "@F @B, @A, @s", },
 	{ 0xFF00FFFF, 0x22000000, "LW @B, [@A]", },
 	{ 0xFF000000, 0x22000000, "LW @B, [@A, #@s]", },
+//	{ 0xFF000000, 0x82000000, "LW @B, [PC, #@s]", },
+	{ 0xFF000000, 0x82000000, "LW @B, [@l]", },
 	{ 0xFF00FFFF, 0x32000000, "SW @B, [@A]", },
 	{ 0xFF000000, 0x32000000, "SW @B, [@A, #@s]", },
 	{ 0xFFFF0000, 0x4FFF0000, "B @r", },
@@ -479,7 +497,7 @@ void disassemble(char *buf, unsigned pc, unsigned instr) {
 
 void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 	unsigned instr = 0;
-	unsigned tmp;
+	unsigned tmp, tmp2;
 	
 	if (tok[0] == tSTRING) {
 		if (tok[1] == tCOLON) {
@@ -545,7 +563,7 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 			emit(0x6FF00000 | TO_D(tmp) | TO_B(to_register(tok[1])));
 		} else if (tok[1] == tSTRING) {
 			emit(0x4FF00000 | TO_B(tmp));
-			uselabel(str[1], PC - 1, 16);
+			uselabel(str[1], PC - 1, TYPE_BRANCH_16);
 		} else if (tok[1] == tDOT) {
 			emit(0x4FF00000 | TO_B(tmp) | TO_I16(-1));
 		} else {
@@ -569,7 +587,7 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 			emit(instr | 0x20000000 | TO_D(tmp) | TO_B(to_register(tok[3])));
 		} else if (tok[3] == tSTRING) {
 			emit(instr | TO_B(tmp));
-			uselabel(str[3], PC - 1, 16);
+			uselabel(str[3], PC - 1, TYPE_BRANCH_16);
 		} else if (tok[3] == tDOT) {
 			emit(instr | TO_I16(-1));
 		} else {
@@ -585,8 +603,23 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 		}
 		expect_register(tok[1]);
 		expect(tCOMMA,tok[2]);
+		if (tok[3] == tSTRING) {
+			if (tok[0] == tSW)
+				die("cannot store pc relative");
+			emit(0x82F00000	| TO_B(to_register(tok[1])));
+			uselabel(str[3], PC - 1, TYPE_LW_PC_16);
+			return;
+		}
 		expect(tOBRACK,tok[3]);
-		expect_register(tok[4]);
+		if (tok[4] == tPC) {
+			if (tok[0] == tSW)
+				die("cannot store pc relative");
+			tmp2 = 0xF;
+			instr = 0x82000000;
+		} else {
+			expect_register(tok[4]);
+			tmp2 = to_register(tok[4]);
+		}
 		if (tok[5] == tCOMMA) {
 			expect(tNUMBER, tok[6]);
 			expect(tCBRACK, tok[7]);
@@ -596,7 +629,7 @@ void assemble_line(int n, unsigned *tok, unsigned *num, char **str) {
 			tmp = 0;
 		}
 		if (!is_signed_16(tmp)) die("index too large");
-		instr |= TO_B(to_register(tok[1])) | TO_A(to_register(tok[4]) | TO_I16(tmp));
+		instr |= TO_B(to_register(tok[1])) | TO_A(tmp2) | TO_I16(tmp);
 		emit(instr);
 		return;
 	case tWORD:

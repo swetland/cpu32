@@ -33,6 +33,7 @@ always @ (*) begin
 	4'b0101: control = 7'b1010110; // BLNZ rel16
 	4'b0110: control = 7'b1010010; // BLZ Rb
 	4'b0111: control = 7'b1010010; // BLNZ Rb
+	4'b1000: control = 7'b1110101; // LW Rd, [PC, #I]
 	4'b1110: control = 7'b1100000; // NOP
 	default: control = 7'b0000000;
 	endcase
